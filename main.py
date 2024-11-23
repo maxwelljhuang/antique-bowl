@@ -17,23 +17,28 @@ def redrawAll(app):
     # Update the camera to follow the ball
     app.field.updateCamera(app.ball['x'], app.ball['y'])
 
-    # Draw the field with the updated camera position
+    # Draw the field
     app.field.drawField()
 
-    # Draw the ball as an image
+    # Update the player formation relative to the ball
+
+    # Draw all players
+    for player in app.players:
+        player.draw(app.field.camera_x, app.field.camera_y, app.field.scale_factor)
+
+    # Draw the ball
     ball_image_path = '/Users/max/antique-bowl/other_sprites/ball.png'  # Replace with the correct path
     ball_screen_x = (app.ball['x'] - app.field.camera_x) * app.field.scale_factor
     ball_screen_y = (app.ball['y'] - app.field.camera_y) * app.field.scale_factor
-    ball_scaled_width = 50 * app.field.scale_factor  # Scale the ball's width
-    ball_scaled_height = 25 * app.field.scale_factor  # Scale the ball's height
-    for player in app.players:
-        player.draw(app.field.camera_x, app.field.camera_y, app.field.scale_factor)
-    # Draw the ball
+    ball_scaled_width = 40 * app.field.scale_factor
+    ball_scaled_height = 20 * app.field.scale_factor
+
     drawImage(ball_image_path,
-              ball_screen_x - ball_scaled_width / 2,  # Center horizontally
-              ball_screen_y - ball_scaled_height / 2,  # Center vertically
+              ball_screen_x - ball_scaled_width / 2,
+              ball_screen_y - ball_scaled_height / 2,
               width=ball_scaled_width,
               height=ball_scaled_height)
+
 
 def onKeyHold(app, keys):
     if 'up' in keys:

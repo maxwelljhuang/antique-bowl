@@ -1,27 +1,27 @@
-from Player import Player  # Ensure Player is defined in Player.py or adjust the import path
+from Player import Player
 
 def setupFormation(ball_x, ball_y):
     """
-    Set up player positions horizontally relative to the ball placement.
-    :param ball_x: X-coordinate of the ball.
-    :param ball_y: Y-coordinate of the ball.
+    Set up an offensive formation with 7 linemen, 2 wide receivers, 1 quarterback, and 1 running back.
+    :param ball_x: X-coordinate of the ball (line of scrimmage center).
+    :param ball_y: Y-coordinate of the ball (line of scrimmage).
     :return: A list of Player objects in their formation.
     """
     players = []
 
-    # 7 Linemen (horizontal line centered around the ball, same y-coordinate)
-    linemen_x_offsets = [-120, -90, -60, -30, 30, 60, 90]
-    for i, offset in enumerate(linemen_x_offsets):
-        players.append(Player(ball_x + offset, ball_y, f'/Users/max/antique-bowl/linemen-animation/linestance.png'))
+    # 7 Linemen: Horizontally aligned around the ball
+    linemen_y_offsets = [-90, -60, -30, 0, 30, 60, 90]  # Vertical offsets from the ball
+    for i, offset in enumerate(linemen_y_offsets):
+        players.append(Player(ball_x, ball_y + offset, f'/Users/max/antique-bowl/linemen-animation/linestance.png'))
 
-    # Quarterback (directly behind the center lineman)
-    players.append(Player(ball_x, ball_y + 50, '/Users/max/antique-bowl/stance.png'))  # QB sprite
+    # Quarterback directly behind the center lineman
+    players.append(Player(ball_x - 50, ball_y, '/Users/max/antique-bowl/stance.png'))  # QB sprite
 
-    # Running Back (further behind the quarterback)
-    players.append(Player(ball_x, ball_y + 100, '/Users/max/antique-bowl/stance.png'))  # RB sprite
+    # Running Back further behind the quarterback
+    players.append(Player(ball_x - 90, ball_y, '/Users/max/antique-bowl/stance.png'))  # RB sprite
 
-    # Wide Receivers (far left and right of the linemen line)
-    players.append(Player(ball_x - 200, ball_y, '/Users/max/antique-bowl/stance.png'))  # Left receiver
-    players.append(Player(ball_x + 200, ball_y, '/Users/max/antique-bowl/stance.png'))  # Right receiver
+    # 2 Wide Receivers: Far left and far right, at the same y-coordinate as linemen
+    players.append(Player(ball_x - 25, ball_y - 110, '/Users/max/antique-bowl/stance.png'))  # Left receiver
+    players.append(Player(ball_x - 25, ball_y + 110, '/Users/max/antique-bowl/stance.png'))  # Right receiver
 
     return players
