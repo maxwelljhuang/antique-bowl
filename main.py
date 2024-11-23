@@ -1,6 +1,7 @@
 from cmu_graphics import *
 from Field import Field  # Ensure Field class is in the same directory or properly imported
 from Player import Player
+from Formation import setupFormation
 def onAppStart(app):
     # Initialize the field
     app.field = Field(
@@ -11,14 +12,7 @@ def onAppStart(app):
         view_height=app.height  # Screen height
     )
     app.ball = {'x': app.field.field_width // 2, 'y': app.field.field_height // 2, 'radius': 10}
-    app.players = [
-        Player(app.ball['x'] - 100, app.ball['y'] - 50, '/Users/max/Desktop/run-animation/run1_cleaned.png'),
-        Player(app.ball['x'] + 100, app.ball['y'] - 50, '/Users/max/Desktop/run-animation/run2_cleaned.png'),
-        Player(app.ball['x'] - 100, app.ball['y'] + 50, '/Users/max/Desktop/run-animation/run3_cleaned.png'),
-        Player(app.ball['x'] + 100, app.ball['y'] + 50, '/Users/max/Desktop/run-animation/run4_cleaned.png'),
-        Player(app.ball['x'], app.ball['y'] - 100, '/Users/max/Desktop/run-animation/run5_cleaned.png'),
-        Player(app.ball['x'], app.ball['y'] + 100, '/Users/max/Desktop/run-animation/run6_cleaned.png')
-    ]
+    app.players = setupFormation(app.ball['x'], app.ball['y'])    
 def redrawAll(app):
     # Update the camera to follow the ball
     app.field.updateCamera(app.ball['x'], app.ball['y'])
