@@ -4,11 +4,6 @@ class Field:
     def __init__(self, field_image_path, field_width, field_height, view_width, view_height):
         """
         Initializes the field with the given image and dimensions.
-        :param field_image_path: Path to the field image.
-        :param field_width: Total width of the field in pixels.
-        :param field_height: Total height of the field in pixels.
-        :param view_width: Width of the visible portion of the field (viewport).
-        :param view_height: Height of the visible portion of the field (viewport).
         """
         self.field_image_path = field_image_path
         self.field_width = field_width
@@ -18,22 +13,27 @@ class Field:
         self.camera_x = 0
         self.camera_y = 0
 
+        # Calculate uniform scale factor to fit the viewport without stretching
+        self.scale_factor = max(view_width / field_width, view_height / field_height)
+
     def updateCamera(self, ball_x, ball_y):
         """
-        Updates the camera position to center on the ball, ensuring the viewport stays within the field bounds.
-        :param ball_x: The x-coordinate of the ball.
-        :param ball_y: The y-coordinate of the ball.
+        Updates the camera position to center on the ball while ensuring it stays within bounds.
         """
         # Center the camera on the ball
-        self.camera_x = ball_x - self.view_width // 2
-        self.camera_y = ball_y - self.view_height // 2
+        self.camera_x = ball_x - (self.view_width / self.scale_factor) / 2
+        self.camera_y = ball_y - (self.view_height / self.scale_factor) / 2
 
-        # Clamp the camera within field boundaries
-        self.camera_x = max(0, min(self.camera_x, self.field_width - self.view_width))
-        self.camera_y = max(0, min(self.camera_y, self.field_height - self.view_height))
+        # Clamp the camera to the field's boundaries
+        self.camera_x = max(0, min(self.camera_x, self.field_width - self.view_width / self.scale_factor))
+        self.camera_y = max(0, min(self.camera_y, self.field_height - self.view_height / self.scale_factor))
 
     def drawField(self):
         """
-        Draws the portion of the field visible in the current camera view.
+        Draws the field, scaled to maintain its aspect ratio.
         """
-        drawImage(self.field_image_path, -self.camera_x, -self.camera_y)
+        drawImage(self.field_image_path,
+                  -self.camera_x * self.scale_factor,
+                  -self.camera_y * self.scale_factor,
+                  width=self.field_width * self.scale_factor,
+                  height=self.field_height * self.scale_factor)
