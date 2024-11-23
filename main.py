@@ -1,6 +1,6 @@
 from cmu_graphics import *
 from Field import Field  # Ensure Field class is in the same directory or properly imported
-
+from Player import Player
 def onAppStart(app):
     # Initialize the field
     app.field = Field(
@@ -11,7 +11,14 @@ def onAppStart(app):
         view_height=app.height  # Screen height
     )
     app.ball = {'x': app.field.field_width // 2, 'y': app.field.field_height // 2, 'radius': 10}
-
+    app.players = [
+        Player(app.ball['x'] - 100, app.ball['y'] - 50, '/Users/max/Desktop/run-animation/run1_cleaned.png'),
+        Player(app.ball['x'] + 100, app.ball['y'] - 50, '/Users/max/Desktop/run-animation/run2_cleaned.png'),
+        Player(app.ball['x'] - 100, app.ball['y'] + 50, '/Users/max/Desktop/run-animation/run3_cleaned.png'),
+        Player(app.ball['x'] + 100, app.ball['y'] + 50, '/Users/max/Desktop/run-animation/run4_cleaned.png'),
+        Player(app.ball['x'], app.ball['y'] - 100, '/Users/max/Desktop/run-animation/run5_cleaned.png'),
+        Player(app.ball['x'], app.ball['y'] + 100, '/Users/max/Desktop/run-animation/run6_cleaned.png')
+    ]
 def redrawAll(app):
     # Update the camera to follow the ball
     app.field.updateCamera(app.ball['x'], app.ball['y'])
@@ -25,7 +32,8 @@ def redrawAll(app):
     ball_screen_y = (app.ball['y'] - app.field.camera_y) * app.field.scale_factor
     ball_scaled_width = 50 * app.field.scale_factor  # Scale the ball's width
     ball_scaled_height = 25 * app.field.scale_factor  # Scale the ball's height
-
+    for player in app.players:
+        player.draw(app.field.camera_x, app.field.camera_y, app.field.scale_factor)
     # Draw the ball
     drawImage(ball_image_path,
               ball_screen_x - ball_scaled_width / 2,  # Center horizontally

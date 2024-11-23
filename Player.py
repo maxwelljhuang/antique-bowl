@@ -21,3 +21,4 @@ class Player:
                   screen_y - scaled_height / 2,  # Center vertically
                   width=scaled_width,
                   height=scaled_height)
+    
