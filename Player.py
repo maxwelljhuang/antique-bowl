@@ -35,3 +35,6 @@ class Player:
                 height=40 * scaleFactor,
                 rotateAngle=self.rotation
             )
+    def moveForward(self):
+        self.x += self.speed  # Simple forward movement
+

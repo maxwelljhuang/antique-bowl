@@ -14,13 +14,18 @@ class Field:
         self.end_zone_right = field_width
 
     def updateCamera(self, ball_x, ball_y):
-        # Calculate camera center positions
-        self.camera_x = ball_x - (self.view_width / self.scale_factor) / 2
-        self.camera_y = ball_y - (self.view_height / self.scale_factor) / 2
+        # Calculate the camera's top-left corner to center the ball
+        half_view_width = (self.view_width / self.scale_factor) / 2
+        half_view_height = (self.view_height / self.scale_factor) / 2
 
-        # Clamp camera to field boundaries
+        self.camera_x = ball_x - half_view_width
+        self.camera_y = ball_y - half_view_height
+
+        # Clamp the camera to ensure it stays within the field boundaries
         self.camera_x = max(0, min(self.camera_x, self.field_width - self.view_width / self.scale_factor))
         self.camera_y = max(0, min(self.camera_y, self.field_height - self.view_height / self.scale_factor))
+
+
 
     def drawField(self):
         drawImage(

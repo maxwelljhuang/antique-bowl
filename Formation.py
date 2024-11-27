@@ -15,10 +15,13 @@ def setupFormation(ballX, ballY, quarterbackSprite, linemanSprite, receiverSprit
 
     # Quarterback and skill players (offense only)
     if not isDefense:
-        players.append(Player(ballX + 30, ballY, isQuarterback=True, spritePath=quarterbackSprite))  # QB
+        qbX = ballX + 30
+        qbY = ballY  # Place QB behind the ball
+        players.append(Player(qbX, qbY, isQuarterback=True, spritePath=quarterbackSprite))  # QB
         players.append(Player(ballX, ballY + 50, spritePath=runningBackSprite))  # Running Back
         players.append(Player(ballX + 150, ballY - 50, spritePath=receiverSprite))  # Receiver 1
         players.append(Player(ballX + 150, ballY + 50, spritePath=receiverSprite))  # Receiver 2
 
     return players
+
 

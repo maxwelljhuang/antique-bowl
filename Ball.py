@@ -7,24 +7,29 @@ class Ball:
         self.holder = holder  # Determines if the ball is held by a player
         self.radius = radius
 
+    # Ball.py
     def updatePosition(self, gameState):
         # Ball remains stationary in non-play states
-        if gameState not in ['hiking', 'pass']:
+        if gameState not in ['ballInMotion', 'hiking', 'pass']:
             self.velocityX = 0
             self.velocityY = 0
             return
 
-        # Apply velocity changes
+        # Apply velocity changes to the ball
         self.positionX += self.velocityX
         self.positionY += self.velocityY
 
-        # Apply gravity if the ball is above the ground level
+        # Simulate gravity if the ball is above the ground
         if self.positionY + self.radius < 446:  # Ground level
-            self.velocityY += 0.5  # Simulate gravity
+            self.velocityY += 0.5  # Gravity effect
         else:
-            # Stop gravity and reset the ball to ground level
+            # Ball hits the ground
             self.velocityY = 0
             self.positionY = 446 - self.radius
+            self.velocityX *= 0.95  # Simulate ground friction
+            if abs(self.velocityX) < 0.1:  # Stop the ball if velocity is too low
+                self.velocityX = 0
+
 
     def reset(self, x, y):
         self.positionX = x

@@ -13,15 +13,12 @@ def onAppStart(app):
     app.score = {'Team A': 0, 'Team B': 0}
     app.draggingBall = False
     app.trajectoryDots = []
-    app.rpo = RPO(app)  # Initialize the RPO logic
-
-
-    # Additional initialization (Field, Ball, Players, etc.)
-
+    app.qbSelected = False  # Track if QB has been selected
+    app.rpo = RPO(app)
 
     # Initialize the field
     app.field = Field(
-        'other_sprites/field.png',  # Path to field image (relative path)
+        'other_sprites/field.png',
         field_width=2458,
         field_height=446,
         view_width=app.width,
@@ -35,12 +32,11 @@ def onAppStart(app):
         velocityX=0,
         velocityY=0
     )
-    app.center = {'x': app.ball.positionX, 'y': app.ball.positionY}
 
     # Load sprites
     quarterbackSprite = 'stance.png'
     linemanSprite = 'linemen-animation/linestance.png'
-    receiverSprite = 'run-animation/run1_cleaned.png'  # Initial frame for animation
+    receiverSprite = 'run-animation/run1_cleaned.png'
     runningBackSprite = 'stance.png'
 
     # Set up formations
@@ -48,9 +44,10 @@ def onAppStart(app):
         app.ball.positionX, app.ball.positionY,
         quarterbackSprite, linemanSprite, receiverSprite, runningBackSprite
     )
-    app.quarterback = app.players[7]
+    app.quarterback = app.players[7]  # QB is explicitly tracked
     app.runningBack = app.players[8]
     app.receivers = app.players[9:]
+
 
     # Animation settings for receivers
     app.receiverFrames = [
@@ -90,9 +87,8 @@ def redrawAll(app):
     ball_image = 'other_sprites/ball.png'
     ball_screen_x = (app.ball.positionX - app.field.camera_x) * app.field.scale_factor
     ball_screen_y = (app.ball.positionY - app.field.camera_y) * app.field.scale_factor
-    drawImage(ball_image, ball_screen_x, ball_screen_y, width=20, height=20)
+    drawImage(ball_image, ball_screen_x, ball_screen_y, width=60, height=35)
 
-    # Draw play selection menu
     # Draw play selection menu
     if app.state == 'playSelection':
         drawRect(50, 50, 200, 100, fill='blue')
@@ -115,7 +111,11 @@ def onKeyPress(app, key):
 
         # Calculate the ball trajectory and display dots
         app.trajectoryDots = calculateTrajectory(app.ball.positionX, app.ball.positionY, closestReceiver.x, closestReceiver.y, power=10)
-
+    if app.state == 'runPlay':
+        if key == 'up':
+            app.runningBack.y -= 10  # Move running back up
+        elif key == 'down':
+            app.runningBack.y += 10  # Move running back down
 def calculateTrajectory(startX, startY, targetX, targetY, power=10):
     """
     Calculates the trajectory of the ball and returns a list of points (dots) along the path.
@@ -136,38 +136,81 @@ def calculateTrajectory(startX, startY, targetX, targetY, power=10):
         velocityY += 0.5  # Gravity effect
     return trajectory
 
-def onMousePress(app, mouseX, mouseY):
-    if app.state == 'playSelection':
-        # Handle Pass Play button
-        if 50 <= mouseX <= 250 and 50 <= mouseY <= 150:
-            app.currentPlay = 'pass'
-            app.state = 'preSnap'
-            print("Pass Play selected")
-        # Handle Run Play button
-        elif 50 <= mouseX <= 250 and 200 <= mouseY <= 300:
-            app.currentPlay = 'run'
-            app.state = 'preSnap'
-            print("Run Play selected")
-            
-def onMouseDrag(app, mouseX, mouseY):
-    if app.state == 'preSnap':
-        app.rpo.handleMouseDrag(mouseX, mouseY)
-
-def onMouseRelease(app, mouseX, mouseY):
-    if app.state == 'preSnap':
-        app.rpo.handleMouseRelease()
-
 def onStep(app):
+    # Ensure the camera is updated to center the ball
+    app.field.updateCamera(app.ball.positionX, app.ball.positionY)
+
+    # Handle ball snapping and handoff logic
+    if app.state == 'hiking':
+        if app.ball.holder is None:
+            # Snap ball to quarterback
+            app.ball.reset(app.quarterback.x, app.quarterback.y)
+            app.ball.holder = app.quarterback  # Assign ball to QB
+            print("Ball snapped to quarterback.")
+        else:
+            # Hand off to running back after snapping
+            app.ball.holder = app.runningBack
+            app.ball.positionX = app.runningBack.x
+            app.ball.positionY = app.runningBack.y
+            app.state = 'runPlay'  # Transition to run play
+            print("Ball handed off to running back.")
+
+    # Automatically move running back forward during run play
+    if app.state == 'runPlay':
+        app.runningBack.x += 3  # Move forward automatically
+        app.ball.positionX = app.runningBack.x  # Keep ball with running back
+        app.ball.positionY = app.runningBack.y
+
+    # Update ball position
+    app.ball.updatePosition(app.state)
+
     if app.timer > 0 and app.state != 'playSelection':
         app.timer -= 1 / 30  # Countdown timer
 
-    # Update ball position based on game state
-    app.ball.updatePosition(app.state)
+
+def onMousePress(app, mouseX, mouseY):
+    if app.state == 'playSelection':
+        # Handle Pass Play selection
+        if 50 <= mouseX <= 250 and 50 <= mouseY <= 150:
+            app.currentPlay = 'pass'
+            app.state = 'hiking'  # Transition to hiking state
+            app.qbSelected = False  # Reset QB selection
+        elif 50 <= mouseX <= 250 and 200 <= mouseY <= 300:
+            app.currentPlay = 'run'
+            app.state = 'hiking'  # Transition to hiking state
+    if app.state == 'postSnap' and app.currentPlay == 'pass':
+        # Map mouse coordinates to field coordinates
+        try:
+            fieldMouseX, fieldMouseY = screenToField(app, mouseX, mouseY)
+        except Exception as e:
+            print(f"Error mapping screen to field coordinates: {e}")
+            return
+        
+        # Check if the user clicked on the quarterback
+        qbX, qbY = app.quarterback.x, app.quarterback.y
+        qbWidth, qbHeight = 60, 35  # Match QB sprite dimensions
+        print(f"Mouse (Screen): ({mouseX}, {mouseY})")
+        print(f"Mouse (Field): ({fieldMouseX}, {fieldMouseY})")
+        print(f"QB Position: ({qbX}, {qbY})")
+        
+        if qbX - qbWidth / 2 <= fieldMouseX <= qbX + qbWidth / 2 and qbY - qbHeight / 2 <= fieldMouseY <= qbY + qbHeight / 2:
+            app.qbSelected = True  # QB is selected
+            print("Quarterback selected.")
+
+def onMouseDrag(app, mouseX, mouseY):
+    if app.state == 'postSnap' and app.currentPlay == 'pass' and app.qbSelected:
+        # Map mouse coordinates to field coordinates
+        fieldMouseX, fieldMouseY = screenToField(app, mouseX, mouseY)
+        app.rpo.handleMouseDrag(fieldMouseX, fieldMouseY)
+
+def onMouseRelease(app, mouseX, mouseY):
+    if app.state == 'postSnap' and app.currentPlay == 'pass' and app.qbSelected:
+        # Map mouse coordinates to field coordinates
+        fieldMouseX, fieldMouseY = screenToField(app, mouseX, mouseY)
+        app.rpo.handleMouseRelease()
+
 
 def resetGame(app):
-    """
-    Resets the game state after a play or at the start.
-    """
     app.state = 'playSelection'  # Reset to play selection
     app.ball.reset(app.field.field_width // 2, app.field.field_height // 2)  # Reset ball to the center
     app.center = {'x': app.ball.positionX, 'y': app.ball.positionY}
@@ -181,6 +224,23 @@ def resetGame(app):
         app.ball.positionX, app.ball.positionY,
         quarterbackSprite, linemanSprite, receiverSprite, runningBackSprite
     )
+    app.quarterback = app.players[7]
+    app.runningBack = app.players[8]
+    app.receivers = app.players[9:]
+
+
+def screenToField(app, screenX, screenY):
+    if not hasattr(app, 'field') or app.field.scale_factor == 0: #
+        print("Field or scale factor is not initialized!")
+        return screenX, screenY  # Return screen coordinates as-is
+
+    # Map screen coordinates to field coordinates
+    fieldX = (screenX / app.field.scale_factor) + app.field.camera_x
+    fieldY = (screenY / app.field.scale_factor) + app.field.camera_y
+    return fieldX, fieldY
+
+
+
 
 def main():
     runApp(width=2500, height=1250)
