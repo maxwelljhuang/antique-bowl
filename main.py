@@ -57,6 +57,17 @@ def onAppStart(app):
         receiver.animationFrame = 0
         receiver.animationCounter = 0
         receiver.frameDelay = 5  # Controls animation speed
+        
+    # Load running back animation frames
+    app.runningBackFrames = [
+        f'/Users/max/Desktop/run-animation/run{i}_cleaned.png' for i in range(1, 7)
+    ]
+
+    # Initialize running back animation settings
+    app.runningBack.animationFrame = 0
+    app.runningBack.animationCounter = 0
+    app.runningBack.frameDelay = 5  # Controls animation speed
+
 
 def redrawAll(app):
     # Update the camera to center on the ball
@@ -96,7 +107,6 @@ def redrawAll(app):
         drawRect(50, 200, 200, 100, fill='green')
         drawLabel("Run Play", 150, 250, fill='white', size=20)
 
-
     # Draw scores and timer
     drawLabel(f"Team A: {app.score['Team A']}", 50, 30, size=20, fill="white")
     drawLabel(f"Time Left: {int(app.timer)}s", 350, 30, size=20, fill="white")
@@ -116,10 +126,8 @@ def onKeyPress(app, key):
             app.runningBack.y -= 10  # Move running back up
         elif key == 'down':
             app.runningBack.y += 10  # Move running back down
+
 def calculateTrajectory(startX, startY, targetX, targetY, power=10):
-    """
-    Calculates the trajectory of the ball and returns a list of points (dots) along the path.
-    """
     trajectory = []
     dx = targetX - startX
     dy = targetY - startY
@@ -146,27 +154,32 @@ def onStep(app):
             # Snap ball to quarterback
             app.ball.reset(app.quarterback.x, app.quarterback.y)
             app.ball.holder = app.quarterback  # Assign ball to QB
-            print("Ball snapped to quarterback.")
         else:
             # Hand off to running back after snapping
             app.ball.holder = app.runningBack
             app.ball.positionX = app.runningBack.x
             app.ball.positionY = app.runningBack.y
             app.state = 'runPlay'  # Transition to run play
-            print("Ball handed off to running back.")
 
     # Automatically move running back forward during run play
     if app.state == 'runPlay':
-        app.runningBack.x += 3  # Move forward automatically
-        app.ball.positionX = app.runningBack.x  # Keep ball with running back
+        # Move the running back forward
+        app.runningBack.x += 3  # Forward movement
+        app.ball.positionX = app.runningBack.x  # Ball moves with the running back
         app.ball.positionY = app.runningBack.y
+
+        # Update animation frame
+        app.runningBack.animationCounter += 1
+        if app.runningBack.animationCounter >= app.runningBack.frameDelay:
+            app.runningBack.animationFrame = (app.runningBack.animationFrame + 1) % len(app.runningBackFrames)
+            app.runningBack.spritePath = app.runningBackFrames[app.runningBack.animationFrame]
+            app.runningBack.animationCounter = 0  # Reset counter
 
     # Update ball position
     app.ball.updatePosition(app.state)
 
     if app.timer > 0 and app.state != 'playSelection':
         app.timer -= 1 / 30  # Countdown timer
-
 
 def onMousePress(app, mouseX, mouseY):
     if app.state == 'playSelection':
@@ -209,7 +222,6 @@ def onMouseRelease(app, mouseX, mouseY):
         fieldMouseX, fieldMouseY = screenToField(app, mouseX, mouseY)
         app.rpo.handleMouseRelease()
 
-
 def resetGame(app):
     app.state = 'playSelection'  # Reset to play selection
     app.ball.reset(app.field.field_width // 2, app.field.field_height // 2)  # Reset ball to the center
@@ -228,7 +240,6 @@ def resetGame(app):
     app.runningBack = app.players[8]
     app.receivers = app.players[9:]
 
-
 def screenToField(app, screenX, screenY):
     if not hasattr(app, 'field') or app.field.scale_factor == 0: #
         print("Field or scale factor is not initialized!")
@@ -238,9 +249,6 @@ def screenToField(app, screenX, screenY):
     fieldX = (screenX / app.field.scale_factor) + app.field.camera_x
     fieldY = (screenY / app.field.scale_factor) + app.field.camera_y
     return fieldX, fieldY
-
-
-
 
 def main():
     runApp(width=2500, height=1250)
