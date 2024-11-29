@@ -6,8 +6,8 @@ def setupFormation(ballX, ballY, quarterbackSprite, linemanSprite, receiverSprit
 
     # Linemen setup (horizontal line at the line of scrimmage)
     linemenSpacing = 30
-    linemenYStart = ballY - 90  # Line of scrimmage is vertically aligned
-    linemenX = ballX - 50 if not isDefense else ballX + 50
+    linemenYStart = ballY - 90  # Line of scrimmage vertically aligned
+    linemenX = ballX  # Center directly over the ball
 
     for i in range(7):  # 7 linemen
         yOffset = i * linemenSpacing  # Offset each lineman vertically
@@ -34,6 +34,8 @@ def setupFormation(ballX, ballY, quarterbackSprite, linemanSprite, receiverSprit
         players.append(Player(wr2X, wr2Y, spritePath=receiverSprite))  # Receiver 2
 
     return players
+
+
 
 
 

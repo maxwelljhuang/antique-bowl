@@ -25,10 +25,10 @@ def onAppStart(app):
         view_height=app.height
     )
 
-    # Initialize the ball
+    # Set the ball at the 25-yard line
     app.ball = Ball(
-        positionX=app.field.field_width // 2,
-        positionY=app.field.field_height // 2,
+        positionX=app.field.field_width * 0.2,  # 25-yard line (approx 20% of field width)
+        positionY=app.field.field_height / 2,   # Center vertically on the field
         velocityX=0,
         velocityY=0
     )
@@ -56,8 +56,8 @@ def onAppStart(app):
     for receiver in app.receivers:
         receiver.animationFrame = 0
         receiver.animationCounter = 0
-        receiver.frameDelay = 5  # Controls animation speed
-        
+        receiver.frameDelay = 3  # Controls animation speed
+
     # Load running back animation frames
     app.runningBackFrames = [
         f'/Users/max/Desktop/run-animation/run{i}_cleaned.png' for i in range(1, 7)
@@ -66,7 +66,8 @@ def onAppStart(app):
     # Initialize running back animation settings
     app.runningBack.animationFrame = 0
     app.runningBack.animationCounter = 0
-    app.runningBack.frameDelay = 5  # Controls animation speed
+    app.runningBack.frameDelay = 3  # Controls animation speed
+
 
 
 def redrawAll(app):
@@ -148,18 +149,33 @@ def onStep(app):
     # Ensure the camera is updated to center the ball
     app.field.updateCamera(app.ball.positionX, app.ball.positionY)
 
-    # Handle ball snapping and handoff logic
+    # Handle ball snapping and state transitions
     if app.state == 'hiking':
         if app.ball.holder is None:
             # Snap ball to quarterback
             app.ball.reset(app.quarterback.x, app.quarterback.y)
             app.ball.holder = app.quarterback  # Assign ball to QB
-        else:
-            # Hand off to running back after snapping
-            app.ball.holder = app.runningBack
-            app.ball.positionX = app.runningBack.x
-            app.ball.positionY = app.runningBack.y
-            app.state = 'runPlay'  # Transition to run play
+            if app.currentPlay == 'pass':
+                app.state = 'postSnap'  # Transition to post-snap for Pass Play
+                print("Ball snapped to quarterback for Pass Play.")
+            elif app.currentPlay == 'run':
+                app.state = 'runPlay'  # Transition to Run Play
+                print("Ball snapped to quarterback for Run Play.")
+
+    # Handle receiver movement ONLY during Pass Play in postSnap state
+    if app.state == 'postSnap' and app.currentPlay == 'pass':
+        for receiver in app.receivers:
+            # Move the receiver forward and update their animation
+            receiver.x += 3  # Forward movement
+            receiver.animationCounter += 1
+            if receiver.animationCounter >= receiver.frameDelay:
+                receiver.animationFrame = (receiver.animationFrame + 1) % len(app.receiverFrames)
+                receiver.spritePath = app.receiverFrames[receiver.animationFrame]
+                receiver.animationCounter = 0  # Reset counter
+    else:
+        # Keep receivers stationary in all other states
+        for receiver in app.receivers:
+            receiver.animationCounter = 0  # Reset animation counter
 
     # Automatically move running back forward during run play
     if app.state == 'runPlay':
@@ -168,7 +184,7 @@ def onStep(app):
         app.ball.positionX = app.runningBack.x  # Ball moves with the running back
         app.ball.positionY = app.runningBack.y
 
-        # Update animation frame
+        # Update running back animation
         app.runningBack.animationCounter += 1
         if app.runningBack.animationCounter >= app.runningBack.frameDelay:
             app.runningBack.animationFrame = (app.runningBack.animationFrame + 1) % len(app.runningBackFrames)
@@ -181,16 +197,24 @@ def onStep(app):
     if app.timer > 0 and app.state != 'playSelection':
         app.timer -= 1 / 30  # Countdown timer
 
+
+
 def onMousePress(app, mouseX, mouseY):
     if app.state == 'playSelection':
         # Handle Pass Play selection
         if 50 <= mouseX <= 250 and 50 <= mouseY <= 150:
             app.currentPlay = 'pass'
-            app.state = 'hiking'  # Transition to hiking state
+            app.state = 'hiking'  # Transition to hiking state for Pass Play
             app.qbSelected = False  # Reset QB selection
+            print("Pass Play selected.")  # Debug message
+
+        # Handle Run Play selection
         elif 50 <= mouseX <= 250 and 200 <= mouseY <= 300:
             app.currentPlay = 'run'
-            app.state = 'hiking'  # Transition to hiking state
+            app.state = 'hiking'  # Transition to hiking state for Run Play
+            print("Run Play selected.")  # Debug message
+
+    # Handle post-snap state for Pass Play
     if app.state == 'postSnap' and app.currentPlay == 'pass':
         # Map mouse coordinates to field coordinates
         try:
@@ -209,6 +233,7 @@ def onMousePress(app, mouseX, mouseY):
         if qbX - qbWidth / 2 <= fieldMouseX <= qbX + qbWidth / 2 and qbY - qbHeight / 2 <= fieldMouseY <= qbY + qbHeight / 2:
             app.qbSelected = True  # QB is selected
             print("Quarterback selected.")
+
 
 def onMouseDrag(app, mouseX, mouseY):
     if app.state == 'postSnap' and app.currentPlay == 'pass' and app.qbSelected:
@@ -251,7 +276,7 @@ def screenToField(app, screenX, screenY):
     return fieldX, fieldY
 
 def main():
-    runApp(width=2500, height=1250)
+    runApp(width=1920, height=1080)
 
 if __name__ == "__main__":
     main()
