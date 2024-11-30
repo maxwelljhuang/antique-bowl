@@ -4,48 +4,46 @@ class Ball:
         self.positionY = positionY
         self.velocityX = velocityX
         self.velocityY = velocityY
-        self.holder = holder  # Determines if the ball is held by a player
+        self.holder = holder
         self.radius = radius
+        self.inFlight = False
+        self.beingDragged = False  # New flag for drag state
 
-    # Ball.py
+    def throw(self, targetX, targetY, power=10):
+        self.velocityX = (targetX - self.positionX) * 0.1  # Adjust multiplier to control throw speed
+        self.velocityY = (targetY - self.positionY) * 0.1
+        self.holder = None
+        self.inFlight = True
+        self.beingDragged = False
+
     def updatePosition(self, gameState):
-        # Ball remains stationary in non-play states
-        if gameState not in ['ballInMotion', 'hiking', 'pass']:
-            self.velocityX = 0
-            self.velocityY = 0
+        if self.holder is not None:
+            self.positionX = self.holder.x
+            self.positionY = self.holder.y
             return
 
-        # Apply velocity changes to the ball
-        self.positionX += self.velocityX
-        self.positionY += self.velocityY
+        if self.inFlight and not self.beingDragged:
+            self.positionX += self.velocityX
+            self.positionY += self.velocityY
+            self.velocityY += 0.5  # Gravity
 
-        # Simulate gravity if the ball is above the ground
-        if self.positionY + self.radius < 446:  # Ground level
-            self.velocityY += 0.5  # Gravity effect
-        else:
-            # Ball hits the ground
-            self.velocityY = 0
-            self.positionY = 446 - self.radius
-            self.velocityX *= 0.95  # Simulate ground friction
-            if abs(self.velocityX) < 0.1:  # Stop the ball if velocity is too low
-                self.velocityX = 0
+            if self.positionY + self.radius >= 446:
+                self.positionY = 446 - self.radius
+                self.velocityY = 0
+                self.velocityX *= 0.8
+                self.inFlight = False
 
-
+    def canBeCaught(self, player):
+        if not self.inFlight or self.beingDragged:
+            return False
+        dx = self.positionX - player.x
+        dy = self.positionY - player.y
+        distance = (dx**2 + dy**2)**0.5
+        return distance < 50
+    
     def reset(self, x, y):
         self.positionX = x
         self.positionY = y
         self.velocityX = 0
         self.velocityY = 0
         self.holder = None  # Ball is not held
-
-    def throw(self, targetX, targetY, power=10):
-
-        dx = targetX - self.positionX
-        dy = targetY - self.positionY
-        distance = (dx**2 + dy**2)**0.5
-        self.velocityX = (dx / distance) * power
-        self.velocityY = (dy / distance) * power
-
-    def isHeld(self):
-
-        return self.holder is not None
