@@ -5,7 +5,7 @@ from Formation import setupFormation
 from Player import Player
 import math
 from RPO import *
-
+from Defense import *
 def onAppStart(app):
     app.state = 'startScreen'
     app.timer = 60
@@ -65,6 +65,8 @@ def onAppStart(app):
     app.runningBack.frameDelay = 3
     app.runningBack.speed = 5
 
+    defenderSprite = 'stance.png'  
+    app.defense = Defense(app.ball.positionX, app.ball.positionY, defenderSprite)
 def drawStartScreen(app):
     # Draw field background
     drawImage('other_sprites/field.png', 0, 0, width=app.width, height=app.height)
@@ -119,12 +121,22 @@ def redrawAll(app):
         app.field.drawField()
 
         for player in app.players:
+            # Handle receiver animations
             if player in app.receivers and app.receiversMoving:
                 player.animationCounter += 1
                 if player.animationCounter >= player.frameDelay:
                     player.animationFrame = (player.animationFrame + 1) % len(app.receiverFrames)
                     player.animationCounter = 0
                 player.spritePath = app.receiverFrames[player.animationFrame]
+            
+            # Handle running back animation
+            if player == app.runningBack and app.state == 'runPlay':
+                player.animationCounter += 1
+                if player.animationCounter >= player.frameDelay:
+                    player.animationFrame = (player.animationFrame + 1) % len(app.runningBackFrames)
+                    player.animationCounter = 0
+                player.spritePath = app.runningBackFrames[player.animationFrame]
+            
             player.draw(app.field.camera_x, app.field.camera_y, app.field.scale_factor)
 
         for dot in app.trajectoryDots:
@@ -149,7 +161,9 @@ def redrawAll(app):
         drawRect(330, 10, 150, 40, fill='black', opacity=50)
         drawLabel(f"Score: {app.score['Team A']}", 50, 30, size=20, fill="white", bold=True)
         drawLabel(f"Time: {int(app.timer)}s", 350, 30, size=20, fill="white", bold=True)
-
+        
+        for defender in app.defense.players:
+            defender.draw(app.field.camera_x, app.field.camera_y, app.field.scale_factor)
 def onMousePress(app, mouseX, mouseY):
     if app.state == 'startScreen':
         # Check if Start Game button was clicked
@@ -224,6 +238,9 @@ def onStep(app):
                     app.state = 'runPlay'
                 app.snapTimer = 0
 
+    if app.state in ['postSnap', 'runPlay', 'receiverControl']:
+        app.defense.update(app.ball, app.players)
+
     if app.state == 'postSnap' and app.currentPlay == 'pass':
         for receiver in app.receivers:
             if app.receiversMoving:
@@ -257,7 +274,7 @@ def onKeyHold(app, keys):
             
             app.ball.positionX = ballCarrier.x
             app.ball.positionY = ballCarrier.y
-
+    
 def calculateTrajectory(startX, startY, targetX, targetY, power=10):
     trajectory = []
     dx = targetX - startX
