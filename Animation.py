@@ -8,17 +8,14 @@ class Animation:
         self.paused = False
 
     def update(self):
-       
         if self.paused:
             return
-
         self.stepCounter += 1
         if self.stepCounter >= self.frameDelay:
             self.currentFrameIndex = (self.currentFrameIndex + 1) % len(self.frames)
             self.stepCounter = 0
 
     def getCurrentFrame(self):
-       
         return self.frames[self.currentFrameIndex]
 
     def pause(self):

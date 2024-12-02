@@ -26,3 +26,7 @@ class GameState:
             return 'turnover'
         self.initial_ball_position = current_ball_position
         return 'continue'
+
+    def get_down_text(self):
+        suffix = {1: 'st', 2: 'nd', 3: 'rd', 4: 'th'}
+        return f"{self.down}{suffix[self.down]} Down & {self.yards_to_go}"
