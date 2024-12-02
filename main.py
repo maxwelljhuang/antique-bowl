@@ -6,6 +6,8 @@ from Player import Player
 import math
 from RPO import *
 from Defense import *
+from GameState import *
+
 def onAppStart(app):
     app.state = 'startScreen'
     app.timer = 60
@@ -33,7 +35,7 @@ def onAppStart(app):
         velocityX=0,
         velocityY=0
     )
-
+    app.gameState = GameState(app.ball.positionX)
     quarterbackSprite = 'stance.png'
     linemanSprite = 'linemen-animation/linestance.png'
     receiverSprite = 'run-animation/run1_cleaned.png'
@@ -156,12 +158,19 @@ def redrawAll(app):
             drawLabel("Pass Play", 150, 100, fill='white', size=24, bold=True)
             drawLabel("Run Play", 150, 250, fill='white', size=24, bold=True)
 
-        # Score and timer display with improved visibility
-        drawRect(30, 10, 150, 40, fill='black', opacity=50)
-        drawRect(330, 10, 150, 40, fill='black', opacity=50)
-        drawLabel(f"Score: {app.score['Team A']}", 50, 30, size=20, fill="white", bold=True)
-        drawLabel(f"Time: {int(app.timer)}s", 350, 30, size=20, fill="white", bold=True)
+       # Down, score and timer display
+        drawRect(30, 10, 250, 40, fill='black', opacity=50)
+        drawLabel(app.gameState.get_down_text(), 150, 30, size=20, fill='white', bold=True)
         
+        drawRect(330, 10, 150, 40, fill='black', opacity=50)
+        drawRect(530, 10, 150, 40, fill='black', opacity=50)
+        drawLabel(f"Score: {app.gameState.score['Team A']}", 400, 30, size=20, fill='white', bold=True)
+        drawLabel(f"Time: {int(app.timer)}s", 600, 30, size=20, fill='white', bold=True)
+        
+        # Draw first down line
+        first_down_x = (app.gameState.first_down_line - app.field.camera_x) * app.field.scale_factor
+        drawLine(first_down_x, 0, first_down_x, app.height, fill='yellow', lineWidth=2)
+            
         for defender in app.defense.players:
             defender.draw(app.field.camera_x, app.field.camera_y, app.field.scale_factor)
 def onMousePress(app, mouseX, mouseY):
@@ -240,6 +249,26 @@ def onStep(app):
 
     if app.state in ['postSnap', 'runPlay', 'receiverControl']:
         app.defense.update(app.ball, app.players)
+        
+        # Update tackle animations
+        for player in app.players:
+            player.updateTackleAnimation()
+        
+        # Check for tackle completion
+        if any(player.tackleAnimationComplete for player in app.players):
+            # Update down and distance
+            app.gameState.update_down(app.ball.positionX)
+            
+            if app.ball.positionX >= app.gameState.first_down_line:
+                print("First Down!")  # Optional debug message
+            else:
+                result = app.gameState.next_down(app.ball.positionX)
+                if result == 'turnover':
+                    # On turnover, move back 20 yards (4000 pixels)
+                    app.ball.positionX = app.gameState.initial_ball_position - 4000
+                    app.gameState = GameState(app.ball.positionX)
+            
+            resetPlay(app)
 
     if app.state == 'postSnap' and app.currentPlay == 'pass':
         for receiver in app.receivers:
@@ -302,23 +331,37 @@ def calculateTrajectory(startX, startY, targetX, targetY, power=10):
 
     return trajectory
 
-def resetGame(app):
+def resetPlay(app):
+    # Keep the ball at the spot of the tackle
+    last_ball_x = app.ball.positionX  # Store the spot where the play ended
+    
     app.state = 'playSelection'
-    app.ball.reset(app.field.field_width // 2, app.field.field_height // 2)
-    app.center = {'x': app.ball.positionX, 'y': app.ball.positionY}
+    app.draggingBall = False
+    app.trajectoryDots = []
+    app.qbSelected = False
+    app.ballSnapped = False
+    app.snapTimer = 0
     app.receiversMoving = False
-
+    
+    # Reset ball at the spot of the tackle
+    app.ball.reset(last_ball_x, app.field.field_height / 2)
+    
     quarterbackSprite = 'stance.png'
     linemanSprite = 'linemen-animation/linestance.png'
     receiverSprite = 'run-animation/run1_cleaned.png'
     runningBackSprite = 'stance.png'
+    defenderSprite = 'stance.png'
+    
+    # Set up new formation at the spot of the tackle
     app.players = setupFormation(
-        app.ball.positionX, app.ball.positionY,
+        last_ball_x, app.ball.positionY,
         quarterbackSprite, linemanSprite, receiverSprite, runningBackSprite
     )
     app.quarterback = app.players[7]
     app.runningBack = app.players[8]
     app.receivers = app.players[9:]
+    
+    app.defense = Defense(last_ball_x, app.ball.positionY, defenderSprite)
 
 def screenToField(app, screenX, screenY):
     if not hasattr(app, 'field') or app.field.scale_factor == 0:

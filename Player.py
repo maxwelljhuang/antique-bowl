@@ -1,40 +1,58 @@
-import math
 from cmu_graphics import *
 
 class Player:
-    def __init__(self, x, y, isQuarterback=False, spritePath=None):
+    def __init__(self, x, y, spritePath='stance.png', isQuarterback=False):
+        # Existing attributes
         self.x = x
         self.y = y
-        self.isQuarterback = isQuarterback
         self.spritePath = spritePath
-        self.rotation = 0
-        self.speed = 2 if not isQuarterback else 3  # Defensive players are slower
-
-    def moveTowards(self, targetX, targetY):
-        dx = targetX - self.x
-        dy = targetY - self.y
-        distance = math.sqrt(dx**2 + dy**2)
-
-        if distance > 0:  # Prevent division by zero
-            self.x += (dx / distance) * self.speed
-            self.y += (dy / distance) * self.speed
-
-    def rotateToFace(self, targetX, targetY):
-        dx = targetX - self.x
-        dy = targetY - self.y
-        self.rotation = math.degrees(math.atan2(dy, dx))
-
-    def draw(self, cameraX, cameraY, scaleFactor):
+        self.isQuarterback = isQuarterback
+        self.speed = 5
+        self.animationFrame = 0
+        self.animationCounter = 0
+        self.frameDelay = 3
+        
+        # Tackle animation attributes
+        self.isTackled = False
+        self.tackleFrames = [
+            'tackle-animation/tackle1.png',
+            'tackle-animation/tackle2.png',
+            'tackle-animation/tackle3.png'
+        ]
+        self.currentTackleFrame = 0
+        self.tackleAnimationDelay = 5
+        self.tackleAnimationCounter = 0
+        self.tackleAnimationComplete = False
     
-        if self.spritePath:
-            drawImage(
-                self.spritePath,
-                (self.x - cameraX) * scaleFactor,
-                (self.y - cameraY) * scaleFactor,
-                width=40 * scaleFactor,
-                height=40 * scaleFactor,
-                rotateAngle=self.rotation
-            )
+    def startTackle(self):
+        self.isTackled = True
+        self.currentTackleFrame = 0
+        self.tackleAnimationCounter = 0
+        self.tackleAnimationComplete = False
+        self.speed = 0
+    
+    def updateTackleAnimation(self):
+        if self.isTackled and not self.tackleAnimationComplete:
+            self.tackleAnimationCounter += 1
+            if self.tackleAnimationCounter >= self.tackleAnimationDelay:
+                self.currentTackleFrame += 1
+                self.tackleAnimationCounter = 0
+                
+                if self.currentTackleFrame >= len(self.tackleFrames):
+                    self.tackleAnimationComplete = True
+                    self.currentTackleFrame = len(self.tackleFrames) - 1
+    
+    def draw(self, camera_x, camera_y, scale_factor):
+        screen_x = (self.x - camera_x) * scale_factor
+        screen_y = (self.y - camera_y) * scale_factor
+        
+        if self.isTackled:
+            sprite = self.tackleFrames[self.currentTackleFrame]
+        else:
+            sprite = self.spritePath
+            
+        drawImage(sprite, screen_x, screen_y, width=65, height=110)  # Reverted to original size
+    
     def moveForward(self):
-        self.x += self.speed  # Simple forward movement
-
+        if not self.isTackled:
+            self.x += self.speed
