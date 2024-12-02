@@ -7,10 +7,10 @@ class Ball:
         self.holder = holder
         self.radius = radius
         self.inFlight = False
-        self.beingDragged = False  # New flag for drag state
+        self.beingDragged = False 
 
     def throw(self, targetX, targetY, power=10):
-        self.velocityX = (targetX - self.positionX) * 0.1  # Adjust multiplier to control throw speed
+        self.velocityX = (targetX - self.positionX) * 0.1 
         self.velocityY = (targetY - self.positionY) * 0.1
         self.holder = None
         self.inFlight = True
@@ -25,8 +25,7 @@ class Ball:
         if self.inFlight and not self.beingDragged:
             self.positionX += self.velocityX
             self.positionY += self.velocityY
-            self.velocityY += 0.5  # Gravity
-
+            self.velocityY += 0.5  
             if self.positionY + self.radius >= 446:
                 self.positionY = 446 - self.radius
                 self.velocityY = 0
@@ -46,4 +45,4 @@ class Ball:
         self.positionY = y
         self.velocityX = 0
         self.velocityY = 0
-        self.holder = None  # Ball is not held
+        self.holder = None 

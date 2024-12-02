@@ -2,7 +2,7 @@ from cmu_graphics import *
 
 class Player:
     def __init__(self, x, y, spritePath='stance.png', isQuarterback=False):
-        # Existing attributes
+        #player attributes
         self.x = x
         self.y = y
         self.spritePath = spritePath
@@ -12,7 +12,7 @@ class Player:
         self.animationCounter = 0
         self.frameDelay = 3
         
-        # Tackle animation attributes
+        #tackle animation
         self.isTackled = False
         self.tackleFrames = [
             'tackle-animation/tackle1.png',
@@ -51,7 +51,7 @@ class Player:
         else:
             sprite = self.spritePath
             
-        drawImage(sprite, screen_x, screen_y, width=65, height=110)  # Reverted to original size
+        drawImage(sprite, screen_x, screen_y, width=65, height=110) 
     
     def moveForward(self):
         if not self.isTackled:

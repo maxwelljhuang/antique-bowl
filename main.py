@@ -25,7 +25,7 @@ def onAppStart(app):
     app.snapTimer = 0
     app.receiversMoving = False
     
-    # Initialize field
+    # print field
     app.field = Field(
         'other_sprites/field.png',
         field_width=2458,
@@ -75,30 +75,21 @@ def onAppStart(app):
     defenderSprite = 'stance.png'  
     app.defense = Defense(app.ball.positionX, app.ball.positionY, defenderSprite)
 def drawStartScreen(app):
-    # Draw field background
+    #field overlay
     drawImage('other_sprites/field.png', 0, 0, width=app.width, height=app.height)
     
-    # Semi-transparent black overlay
+    #transparent background with field overlay
     drawRect(0, 0, app.width, app.height, fill='black', opacity=60)
     
-    # Title container at x=960 (center), y=200
+    #title screen
     drawRect(660, 160, 600, 80, fill='darkGreen', border='white', borderWidth=3)
     drawLabel('FOOTBALL SIMULATOR', 960, 200, size=50, bold=True, fill='white', font='monospace')
-    
-    # Main instructions container centered at x=960, y=500
     drawRect(610, 350, 700, 300, fill=rgb(0, 50, 0), border='white', borderWidth=2)
-    
-    # Instructions header
     drawLabel("GAME CONTROLS", 960, 380, size=30, bold=True, fill='gold', font='monospace')
-    
-    # Divider line
     drawLine(660, 410, 1260, 410, fill='white', lineWidth=2)
-    
-    # Step 1 - Play Selection
     drawLabel("1. Select your play type: Pass Play or Run Play", 960, 440, 
              size=22, bold=True, fill='white', font='monospace')
-    
-    # Step 2 - Pass Play Controls
+    #title screen controls
     drawLabel("2. Pass Play Controls:", 960, 480, 
              size=22, bold=True, fill='white', font='monospace')
     drawLabel("• Ball snaps to quarterback", 960, 500, 
@@ -108,7 +99,6 @@ def drawStartScreen(app):
     drawLabel("• Drag to aim and release to throw", 960, 540, 
              size=22, fill='white', font='monospace')
     
-    # Step 3 - Run Play Controls
     drawLabel("3. Run Play Controls:", 960, 580, 
              size=22, bold=True, fill='white', font='monospace')
     drawLabel("• Ball snaps to running back", 960, 600, 
@@ -116,7 +106,7 @@ def drawStartScreen(app):
     drawLabel("• Use arrow keys to move in any direction", 960, 620, 
              size=22, fill='white', font='monospace')
     
-    # Start button centered at x=960, y=800
+    #start button
     drawRect(860, 770, 200, 60, fill='darkGreen', border='white', borderWidth=3)
     drawLabel('START GAME', 960, 800, size=30, bold=True, fill='white', font='monospace')
 
@@ -128,7 +118,7 @@ def redrawAll(app):
         app.field.drawField()
 
         for player in app.players:
-            # Handle receiver animations
+            #receiver animation
             if player in app.receivers and app.receiversMoving:
                 player.animationCounter += 1
                 if player.animationCounter >= player.frameDelay:
@@ -136,7 +126,7 @@ def redrawAll(app):
                     player.animationCounter = 0
                 player.spritePath = app.receiverFrames[player.animationFrame]
             
-            # Handle running back animation
+            #running back animation
             if player == app.runningBack and app.state == 'runPlay':
                 player.animationCounter += 1
                 if player.animationCounter >= player.frameDelay:
@@ -157,13 +147,13 @@ def redrawAll(app):
         drawImage(ball_image, ball_screen_x, ball_screen_y, width=60, height=35)
 
         if app.state == 'playSelection':
-            # Play selection buttons with improved styling
+            #play selection
             drawRect(50, 50, 200, 100, fill='darkBlue', border='white', borderWidth=2)
             drawRect(50, 200, 200, 100, fill='darkGreen', border='white', borderWidth=2)
             drawLabel("Pass Play", 150, 100, fill='white', size=24, bold=True)
             drawLabel("Run Play", 150, 250, fill='white', size=24, bold=True)
 
-       # Down, score and timer display
+       #down count, score, and timer
         drawRect(30, 10, 250, 40, fill='black', opacity=50)
         drawLabel(app.gameState.get_down_text(), 150, 30, size=20, fill='white', bold=True)
         
@@ -172,7 +162,7 @@ def redrawAll(app):
         drawLabel(f"Score: {app.gameState.score['Team A']}", 400, 30, size=20, fill='white', bold=True)
         drawLabel(f"Time: {int(app.timer)}s", 600, 30, size=20, fill='white', bold=True)
         
-        # Draw first down line
+        #first down line
         first_down_x = (app.gameState.first_down_line - app.field.camera_x) * app.field.scale_factor
         drawLine(first_down_x, 0, first_down_x, app.height, fill='yellow', lineWidth=2)
             
@@ -180,13 +170,13 @@ def redrawAll(app):
             defender.draw(app.field.camera_x, app.field.camera_y, app.field.scale_factor)
 def onMousePress(app, mouseX, mouseY):
     if app.state == 'startScreen':
-        # Check if Start Game button was clicked
+        #check if game start was clicked
         buttonY = app.height * 0.8
         if (app.width/2 - 100 <= mouseX <= app.width/2 + 100 and
             buttonY - 30 <= mouseY <= buttonY + 30):
             app.state = 'playSelection'
             return
-
+        #check play selection
     elif app.state == 'playSelection':
         if 50 <= mouseX <= 250 and 50 <= mouseY <= 150:
             app.currentPlay = 'pass'
@@ -194,14 +184,12 @@ def onMousePress(app, mouseX, mouseY):
             app.qbSelected = False
             app.ballSnapped = False
             app.receiversMoving = True
-            print("Pass Play selected.")
 
         elif 50 <= mouseX <= 250 and 200 <= mouseY <= 300:
             app.currentPlay = 'run'
             app.state = 'hiking'
             app.ballSnapped = False
             app.receiversMoving = False
-            print("Run Play selected.")
 
     elif app.state == 'postSnap' and app.currentPlay == 'pass':
         fieldMouseX, fieldMouseY = screenToField(app, mouseX, mouseY)
@@ -255,21 +243,21 @@ def onStep(app):
     if app.state in ['postSnap', 'runPlay', 'receiverControl']:
         app.defense.update(app.ball, app.players)
         
-        # Update tackle animations
+        #tackle animations
         for player in app.players:
             player.updateTackleAnimation()
         
-        # Check for tackle completion
+        #check tackle completion
         if any(player.tackleAnimationComplete for player in app.players):
-            # Update down and distance
+            #update down and distance to first down
             app.gameState.update_down(app.ball.positionX)
             
             if app.ball.positionX >= app.gameState.first_down_line:
-                print("First Down!")  # Optional debug message
+                print('none')
             else:
                 result = app.gameState.next_down(app.ball.positionX)
                 if result == 'turnover':
-                    # On turnover, move back 20 yards (4000 pixels)
+                    #on turnover move back to start
                     app.ball.positionX = app.gameState.initial_ball_position - 4000
                     app.gameState = GameState(app.ball.positionX)
             
@@ -337,8 +325,8 @@ def calculateTrajectory(startX, startY, targetX, targetY, power=10):
     return trajectory
 
 def resetPlay(app):
-    # Keep the ball at the spot of the tackle
-    last_ball_x = app.ball.positionX  # Store the spot where the play ended
+    #keep ball at new position
+    last_ball_x = app.ball.positionX  
     
     app.state = 'playSelection'
     app.draggingBall = False
@@ -348,7 +336,7 @@ def resetPlay(app):
     app.snapTimer = 0
     app.receiversMoving = False
     
-    # Reset ball at the spot of the tackle
+    #reset ball to tackle position
     app.ball.reset(last_ball_x, app.field.field_height / 2)
     
     quarterbackSprite = 'stance.png'
@@ -357,7 +345,7 @@ def resetPlay(app):
     runningBackSprite = 'stance.png'
     defenderSprite = 'stance.png'
     
-    # Set up new formation at the spot of the tackle
+    #new formation on tackle
     app.players = setupFormation(
         last_ball_x, app.ball.positionY,
         quarterbackSprite, linemanSprite, receiverSprite, runningBackSprite

@@ -13,7 +13,7 @@ class Defense:
     def setup_formation(self, ballX, ballY, defenderSprite):
         defenders = []
         
-        # Create 7 defenders in a basic formation
+        #create 7 defenders in a basic formation
         for i in range(3):
             x = ballX + 60 + (i * 40)
             y = ballY - 20
@@ -33,7 +33,7 @@ class Defense:
             if ball_carrier:
                 self.move_to_target(defender, ball_carrier.x, ball_carrier.y)
                 
-                # Check for tackle
+                #check for tackle
                 if self.can_tackle(defender, ball_carrier) and not ball_carrier.isTackled:
                     self.tackle(ball, ball_carrier)
             else:
@@ -56,10 +56,9 @@ class Defense:
         return distance < self.tackle_distance
     
     def tackle(self, ball, ball_carrier):
-        # Start the tackle animation for the ball carrier
+        #start the tackle animation
         ball_carrier.startTackle()
-        
-        # Reset ball
+        #reset the ball
         ball.holder = None
         ball.inFlight = False
         ball.velocityX = 0
