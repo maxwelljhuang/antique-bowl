@@ -13,6 +13,7 @@ Image Citations:
 Field: https://ia802208.us.archive.org/26/items/retro-bowl/RetroBowl_texture_0.png
 Player Sprites (including animation frames and stationary frames): https://www.spriters-resource.com/mobile/retrobowl/sheet/200221/
 '''
+
 def onAppStart(app):
     app.state = 'startScreen'
     app.timer = 60
@@ -83,32 +84,32 @@ def drawStartScreen(app):
     
     #title screen
     drawRect(660, 160, 600, 80, fill='darkGreen', border='white', borderWidth=3)
-    drawLabel('FOOTBALL SIMULATOR', 960, 200, size=50, bold=True, fill='white', font='monospace')
+    drawLabel('FOOTBALL SIMULATOR', 960, 200, size=50, bold=True, fill='white')
     drawRect(610, 350, 700, 300, fill=rgb(0, 50, 0), border='white', borderWidth=2)
-    drawLabel("GAME CONTROLS", 960, 380, size=30, bold=True, fill='gold', font='monospace')
+    drawLabel("GAME CONTROLS", 960, 380, size=30, bold=True, fill='gold')
     drawLine(660, 410, 1260, 410, fill='white', lineWidth=2)
     drawLabel("1. Select your play type: Pass Play or Run Play", 960, 440, 
-             size=22, bold=True, fill='white', font='monospace')
+             size=22, bold=True, fill='white')
     #title screen controls
     drawLabel("2. Pass Play Controls:", 960, 480, 
-             size=22, bold=True, fill='white', font='monospace')
+             size=22, bold=True, fill='white')
     drawLabel("• Ball snaps to quarterback", 960, 500, 
-             size=22, fill='white', font='monospace')
+             size=22, fill='white')
     drawLabel("• Click on quarterback to start throwing", 960, 520, 
-             size=22, fill='white', font='monospace')
+             size=22, fill='white')
     drawLabel("• Drag to aim and release to throw", 960, 540, 
-             size=22, fill='white', font='monospace')
+             size=22, fill='white')
     
     drawLabel("3. Run Play Controls:", 960, 580, 
-             size=22, bold=True, fill='white', font='monospace')
+             size=22, bold=True, fill='white')
     drawLabel("• Ball snaps to running back", 960, 600, 
-             size=22, fill='white', font='monospace')
+             size=22, fill='white')
     drawLabel("• Use arrow keys to move in any direction", 960, 620, 
-             size=22, fill='white', font='monospace')
+             size=22, fill='white')
     
     #start button
     drawRect(860, 770, 200, 60, fill='darkGreen', border='white', borderWidth=3)
-    drawLabel('START GAME', 960, 800, size=30, bold=True, fill='white', font='monospace')
+    drawLabel('START GAME', 960, 800, size=30, bold=True, fill='white')
 
 def redrawAll(app):
     if app.state == 'startScreen':
