@@ -11,18 +11,17 @@ class Defense:
         self.tackle_distance = 30
     
     def setup_formation(self, ballX, ballY, defenderSprite):
+
+        linemenSpacing = 30
+        #linemen setup
+        linemenX = ballX  
+        linemenYStart = ballY - 90 
+        #set the center to be directly over the ball
         defenders = []
-        
-        #create 7 defenders in a basic formation
-        for i in range(3):
-            x = ballX + 60 + (i * 40)
-            y = ballY - 20
-            defenders.append(Player(x, y, spritePath=defenderSprite))
-        
-        for i in range(4):
-            x = ballX + 40 + (i * 50)
-            y = ballY - 80
-            defenders.append(Player(x, y, spritePath=defenderSprite))
+        for i in range(7):  
+            #offset location of linemen
+            yOffset = i * linemenSpacing  
+            defenders.append(Player(linemenX + 35, ballY + yOffset - 90, spritePath = defenderSprite))
         
         return defenders
     

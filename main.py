@@ -36,7 +36,7 @@ def onAppStart(app):
     )
 
     app.ball = Ball(
-        positionX=app.field.field_width * 0.2,
+        positionX=650,
         positionY=app.field.field_height / 2,
         velocityX=0,
         velocityY=0
@@ -73,8 +73,9 @@ def onAppStart(app):
     app.runningBack.frameDelay = 3
     app.runningBack.speed = 5
 
-    defenderSprite = 'stance.png'  
+    defenderSprite = 'defender.png'  
     app.defense = Defense(app.ball.positionX, app.ball.positionY, defenderSprite)
+
 def drawStartScreen(app):
     #field overlay
     drawImage('other_sprites/field.png', 0, 0, width=app.width, height=app.height)
@@ -84,7 +85,7 @@ def drawStartScreen(app):
     
     #title screen
     drawRect(660, 160, 600, 80, fill='darkGreen', border='white', borderWidth=3)
-    drawLabel('FOOTBALL SIMULATOR', 960, 200, size=50, bold=True, fill='white')
+    drawLabel('ANTIQUE BOWL', 960, 200, size=50, bold=True, fill='white')
     drawRect(610, 350, 700, 300, fill=rgb(0, 50, 0), border='white', borderWidth=2)
     drawLabel("GAME CONTROLS", 960, 380, size=30, bold=True, fill='gold')
     drawLine(660, 410, 1260, 410, fill='white', lineWidth=2)
@@ -117,6 +118,10 @@ def redrawAll(app):
     else:
         app.field.updateCamera(app.ball.positionX, app.ball.positionY)
         app.field.drawField()
+
+        # Draw first down line
+        first_down_x = (app.gameState.first_down_line - app.field.camera_x) * app.field.scale_factor
+        drawLine(first_down_x, 0, first_down_x, app.height, fill='yellow', lineWidth=2)
 
         for player in app.players:
             #receiver animation
@@ -154,7 +159,7 @@ def redrawAll(app):
             drawLabel("Pass Play", 150, 100, fill='white', size=24, bold=True)
             drawLabel("Run Play", 150, 250, fill='white', size=24, bold=True)
 
-       #down count, score, and timer
+        #down count, score, and timer
         drawRect(30, 10, 250, 40, fill='black', opacity=50)
         drawLabel(app.gameState.get_down_text(), 150, 30, size=20, fill='white', bold=True)
         
@@ -162,13 +167,33 @@ def redrawAll(app):
         drawRect(530, 10, 150, 40, fill='black', opacity=50)
         drawLabel(f"Score: {app.gameState.score['Team A']}", 400, 30, size=20, fill='white', bold=True)
         drawLabel(f"Time: {int(app.timer)}s", 600, 30, size=20, fill='white', bold=True)
-        
-        #first down line
-        first_down_x = (app.gameState.first_down_line - app.field.camera_x) * app.field.scale_factor
-        drawLine(first_down_x, 0, first_down_x, app.height, fill='yellow', lineWidth=2)
             
         for defender in app.defense.players:
             defender.draw(app.field.camera_x, app.field.camera_y, app.field.scale_factor)
+
+        # Draw game over screen if game is over
+        if app.gameState.game_over:
+            drawRect(app.width/2 - 200, app.height/2 - 100, 400, 200, 
+                    fill='black', opacity=80)
+            drawLabel('GAME OVER', app.width/2, app.height/2 - 50, 
+                     size=40, bold=True, fill='white')
+            drawLabel('Press R to Reset', app.width/2, app.height/2 + 50, 
+                     size=30, fill='white')
+    if app.state == 'touchdown':
+            drawRect(app.width/2 - 200, app.height/2 - 100, 400, 200, 
+                    fill='darkGreen', opacity=80)
+            drawLabel('TOUCHDOWN!', app.width/2, app.height/2 - 50, 
+                     size=40, bold=True, fill='gold')
+            drawLabel(f'Score: {app.gameState.score["Team A"]}', app.width/2, app.height/2 + 50, 
+                     size=30, fill='white')
+
+def onKeyPress(app, key):
+    if key == 'r' and app.gameState.game_over:
+        # Reset the game
+        app.gameState.reset_game(650)
+        resetPlay(app)
+        app.state = 'playSelection'
+
 def onMousePress(app, mouseX, mouseY):
     if app.state == 'startScreen':
         #check if game start was clicked
@@ -177,7 +202,7 @@ def onMousePress(app, mouseX, mouseY):
             buttonY - 30 <= mouseY <= buttonY + 30):
             app.state = 'playSelection'
             return
-        #check play selection
+        
     elif app.state == 'playSelection':
         if 50 <= mouseX <= 250 and 50 <= mouseY <= 150:
             app.currentPlay = 'pass'
@@ -201,7 +226,26 @@ def onMousePress(app, mouseX, mouseY):
             qbY - qbHeight/2 <= fieldMouseY <= qbY + qbHeight/2):
             app.qbSelected = True
             app.ball.beingDragged = True
-
+    if app.state == 'touchdown':
+        app.state = 'playSelection'
+        # Reset formations when leaving touchdown screen
+        starting_position = 650
+        quarterbackSprite = 'stance.png'
+        linemanSprite = 'linemen-animation/linestance.png'
+        receiverSprite = 'run-animation/run1_cleaned.png'
+        runningBackSprite = 'stance.png'
+        defenderSprite = 'defender.png'
+        
+        app.players = setupFormation(
+            starting_position, app.ball.positionY,
+            quarterbackSprite, linemanSprite, receiverSprite, runningBackSprite
+        )
+        app.quarterback = app.players[7]
+        app.runningBack = app.players[8]
+        app.receivers = app.players[9:]
+        app.defense = Defense(starting_position, app.ball.positionY, defenderSprite)
+        return
+        
 def onMouseDrag(app, mouseX, mouseY):
     if app.state == 'postSnap' and app.currentPlay == 'pass' and app.qbSelected:
         fieldMouseX, fieldMouseY = screenToField(app, mouseX, mouseY)
@@ -244,43 +288,58 @@ def onStep(app):
     if app.state in ['postSnap', 'runPlay', 'receiverControl']:
         app.defense.update(app.ball, app.players)
         
-        #tackle animations
         for player in app.players:
             player.updateTackleAnimation()
-        
-        #check tackle completion
-        if any(player.tackleAnimationComplete for player in app.players):
-            #update down and distance to first down
-            app.gameState.update_down(app.ball.positionX)
             
-            if app.ball.positionX >= app.gameState.first_down_line:
-                print('none')
+            if player in app.receivers and app.receiversMoving and app.currentPlay == 'pass':
+                player.moveForward()
+        
+        if any(player.tackleAnimationComplete for player in app.players):
+            result = app.gameState.update_down(app.ball.positionX)
+            if result == 'game_over':
+                app.state = 'gameOver'
             else:
                 result = app.gameState.next_down(app.ball.positionX)
-                if result == 'turnover':
-                    #on turnover move back to start
-                    app.ball.positionX = app.gameState.initial_ball_position - 4000
-                    app.gameState = GameState(app.ball.positionX)
+                if result == 'game_over':
+                    app.state = 'gameOver'
+                else:
+                    resetPlay(app)
+
+        if app.ball.positionX >= app.field.field_width * 0.8:  # End zone threshold
+            app.state = 'touchdown'
+            app.gameState.score['Team A'] += 7
+            app.gameState.reset_touchdown(app.field.field_width * 0.2)
+            resetPlayAfterTouchdown(app)
+            return
+        
+        if app.state == 'postSnap' and app.currentPlay == 'pass':
+            #check for incomplete pass
+            if app.ball.inFlight:
+                for receiver in app.receivers:
+                    if app.ball.canBeCaught(receiver):
+                        app.ball.holder = receiver
+                        app.ball.velocityX = 0
+                        app.ball.velocityY = 0
+                        app.ball.inFlight = False
+                        app.state = 'receiverControl'
+                        break
             
-            resetPlay(app)
+            # If ball is not in flight and has no holder (hit ground)
+            elif not app.ball.inFlight and not app.ball.holder and not app.ball.beingDragged:
+                result = app.gameState.update_down(app.ball.positionX)
+                if result == 'game_over':
+                    app.state = 'gameOver'
+                else:
+                    result = app.gameState.next_down(app.ball.positionX)
+                    if result == 'game_over':
+                        app.state = 'gameOver'
+                    else:
+                        resetPlay(app)
 
-    if app.state == 'postSnap' and app.currentPlay == 'pass':
-        for receiver in app.receivers:
-            if app.receiversMoving:
-                receiver.moveForward()
-            
-            if app.ball.canBeCaught(receiver):
-                app.ball.holder = receiver
-                app.ball.velocityX = 0
-                app.ball.velocityY = 0
-                app.ball.inFlight = False
-                app.state = 'receiverControl'
-                print(f"Ball caught by receiver at ({receiver.x}, {receiver.y})")
+        app.ball.updatePosition(app.state)
 
-    app.ball.updatePosition(app.state)
-
-    if app.timer > 0 and app.state != 'playSelection' and app.state != 'startScreen':
-        app.timer -= 1 / 30
+        if app.timer > 0 and app.state != 'playSelection' and app.state != 'startScreen':
+            app.timer -= 1 / 30
 
 def onKeyHold(app, keys):
     if app.state in ['runPlay', 'receiverControl']:
@@ -294,9 +353,6 @@ def onKeyHold(app, keys):
                 ballCarrier.x += ballCarrier.speed
             if 'left' in keys:
                 ballCarrier.x -= ballCarrier.speed
-            
-            app.ball.positionX = ballCarrier.x
-            app.ball.positionY = ballCarrier.y
     
 def calculateTrajectory(startX, startY, targetX, targetY, power=10):
     trajectory = []
@@ -326,8 +382,10 @@ def calculateTrajectory(startX, startY, targetX, targetY, power=10):
     return trajectory
 
 def resetPlay(app):
-    #keep ball at new position
-    last_ball_x = app.ball.positionX  
+    if app.currentPlay == 'pass' and not app.ball.holder:
+        last_ball_x = app.gameState.initial_ball_position
+    else:
+        last_ball_x = app.ball.positionX
     
     app.state = 'playSelection'
     app.draggingBall = False
@@ -337,16 +395,16 @@ def resetPlay(app):
     app.snapTimer = 0
     app.receiversMoving = False
     
-    #reset ball to tackle position
+    #reset ball position
     app.ball.reset(last_ball_x, app.field.field_height / 2)
     
     quarterbackSprite = 'stance.png'
     linemanSprite = 'linemen-animation/linestance.png'
     receiverSprite = 'run-animation/run1_cleaned.png'
     runningBackSprite = 'stance.png'
-    defenderSprite = 'stance.png'
+    defenderSprite = 'defender.png'
     
-    #new formation on tackle
+    #new formation
     app.players = setupFormation(
         last_ball_x, app.ball.positionY,
         quarterbackSprite, linemanSprite, receiverSprite, runningBackSprite
@@ -356,6 +414,58 @@ def resetPlay(app):
     app.receivers = app.players[9:]
     
     app.defense = Defense(last_ball_x, app.ball.positionY, defenderSprite)
+
+def resetPlayAfterTouchdown(app):
+    #20 yard line position
+    starting_position = 650
+    
+    app.state = 'touchdown'
+    app.draggingBall = False
+    app.trajectoryDots = []
+    app.qbSelected = False
+    app.ballSnapped = False
+    app.snapTimer = 0
+    app.receiversMoving = False
+    
+    #reset ball position
+    app.ball.reset(starting_position, app.field.field_height / 2)
+    
+    #reset game state
+    app.gameState.reset_touchdown(starting_position)
+    
+    #reset all formations
+    quarterbackSprite = 'stance.png'
+    linemanSprite = 'linemen-animation/linestance.png'
+    receiverSprite = 'run-animation/run1_cleaned.png'
+    runningBackSprite = 'stance.png'
+    defenderSprite = 'defender.png'
+    
+    #create new formation at starting position
+    app.players = setupFormation(
+        starting_position, app.ball.positionY,
+        quarterbackSprite, linemanSprite, receiverSprite, runningBackSprite
+    )
+    
+    # Update player references
+    app.quarterback = app.players[7]
+    app.runningBack = app.players[8]
+    app.receivers = app.players[9:]
+    
+    # Reset animation states for receivers
+    for receiver in app.receivers:
+        receiver.animationFrame = 0
+        receiver.animationCounter = 0
+        receiver.frameDelay = 3
+        receiver.speed = 5
+    
+    # Reset animation states for running back
+    app.runningBack.animationFrame = 0
+    app.runningBack.animationCounter = 0
+    app.runningBack.frameDelay = 3
+    app.runningBack.speed = 5
+    
+    # Reset defense
+    app.defense = Defense(starting_position, app.ball.positionY, defenderSprite)
 
 def screenToField(app, screenX, screenY):
     if not hasattr(app, 'field') or app.field.scale_factor == 0:
