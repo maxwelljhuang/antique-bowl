@@ -21,7 +21,7 @@ class GameState:
         else:
             pixels_to_go = self.first_down_line - current_ball_position
             # Pixels to yards conversion
-            self.yards_to_go = int(pixels_to_go / 200)
+            self.yards_to_go = int(pixels_to_go / 20)
             if self.down >= 4:
                 self.game_over = True
                 return 'game_over'
