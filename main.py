@@ -26,6 +26,11 @@ def onAppStart(app):
     app.snapTimer = 0
     app.receiversMoving = False
     
+    app.startButtonHovered = False
+    app.passButtonHovered = False
+    app.runButtonHovered = False
+    app.resetButtonHovered = False
+
     # print field
     app.field = Field(
         'other_sprites/field.png',
@@ -42,10 +47,10 @@ def onAppStart(app):
         velocityY=0
     )
     app.gameState = GameState(app.ball.positionX)
-    quarterbackSprite = 'stance.png'
+    quarterbackSprite = 'other_sprites/stance.png'
     linemanSprite = 'linemen-animation/linestance.png'
     receiverSprite = 'run-animation/run1_cleaned.png'
-    runningBackSprite = 'stance.png'
+    runningBackSprite = 'other_sprites/stance.png'
 
     app.players = setupFormation(
         app.ball.positionX, app.ball.positionY,
@@ -77,41 +82,144 @@ def onAppStart(app):
     app.defense = Defense(app.ball.positionX, app.ball.positionY, defenderSprite)
 
 def drawStartScreen(app):
-    #field overlay
+    #background with field overlay and dimming
     drawImage('other_sprites/field.png', 0, 0, width=app.width, height=app.height)
+    drawRect(0, 0, app.width, app.height, fill='black', opacity=70)
     
-    #transparent background with field overlay
+    #title with shadow effect
+    drawLabel('ANTIQUE', 960, 150, size=80, bold=True, fill='black')
+    drawLabel('ANTIQUE', 957, 147, size=80, bold=True, fill='gold')
+    drawLabel('BOWL', 960, 230, size=80, bold=True, fill='black')
+    drawLabel('BOWL', 957, 227, size=80, bold=True, fill='gold')
+    
+    #main control panel
+    drawRect(610, 300, 700, 400, fill=rgb(0, 40, 0), border='gold', borderWidth=3)
+    
+    #game controls header
+    drawLabel("GAME CONTROLS", 960, 340, size=35, bold=True, fill='gold')
+    drawLine(660, 370, 1260, 370, fill='gold', lineWidth=2)
+    
+    #two-column layout for controls
+    #pass plays
+    drawRect(635, 390, 325, 290, fill=rgb(0, 60, 0), border='white')
+    drawLabel("PASSING GAME", 797, 420, size=25, bold=True, fill='white')
+    drawLabel("1. Select Pass Play", 797, 460, size=20, fill='white')
+    drawLabel("2. Wait for snap", 797, 490, size=20, fill='white')
+    drawLabel("3. Click QB to begin throw", 797, 520, size=20, fill='white')
+    drawLabel("4. Drag to aim and release", 797, 550, size=20, fill='white')
+    drawLabel("5. Use arrow keys after catch", 797, 580, size=20, fill='white')
+    
+    #run plays
+    drawRect(960, 390, 325, 290, fill=rgb(0, 60, 0), border='white')
+    drawLabel("RUNNING GAME", 1122, 420, size=25, bold=True, fill='white')
+    drawLabel("1. Select Run Play", 1122, 460, size=20, fill='white')
+    drawLabel("2. Wait for snap", 1122, 490, size=20, fill='white')
+    drawLabel("3. Control with arrow keys:", 1122, 520, size=20, fill='white')
+    drawLabel("↑ up  ↓ down  ← left  → right", 1122, 550, size=20, fill='white')
+    drawLabel("4. Find running lanes!", 1122, 580, size=20, fill='white')
+
+    #start button with hover effect
+    buttonColor = rgb(0, 150, 0) if app.startButtonHovered else 'darkGreen'
+    drawRect(860, 730, 200, 60, fill=buttonColor, border='gold', borderWidth=3)
+    drawLabel('START GAME', 960, 760, size=30, bold=True, fill='white')
+
+def drawGameHUD(app):
+    #score, down, and time display overlay
+    drawRect(20, 10, 280, 50, fill='black', opacity=80, border='gold')
+    drawRect(320, 10, 180, 50, fill='black', opacity=80, border='gold')
+    drawRect(520, 10, 180, 50, fill='black', opacity=80, border='gold')
+    
+    #down and distance with color coding
+    downColor = 'red' if app.gameState.down >= 3 else 'white'
+    drawLabel(app.gameState.get_down_text(), 160, 35, size=22, bold=True, fill=downColor)
+    
+    #score display
+    drawLabel(f"SCORE: {app.gameState.score['Team A']}", 410, 35, 
+             size=22, bold=True, fill='white')
+    
+    #time with color warnings
+    if app.timer <= 10:
+        timeColor = 'red'
+    elif app.timer <= 30:
+        timeColor = 'yellow'
+    else:
+        timeColor = 'white'
+    drawLabel(f"TIME: {int(app.timer)}s", 610, 35, size=22, bold=True, fill=timeColor)
+    
+def drawPlaySelection(app):
+    #play selection panel moved lower
+    drawRect(30, 100, 240, 300, fill=rgb(0, 30, 60), border='white', borderWidth=2)
+    drawLabel("SELECT PLAY", 150, 130, size=26, bold=True, fill='gold')
+    
+    #pass play button with hover
+    passColor = rgb(0,80,160) if app.passButtonHovered else 'darkBlue'
+    drawRect(50, 160, 200, 100, fill=passColor, border='white', borderWidth=2)
+    drawLabel("PASS PLAY", 150, 210, fill='white', size=24, bold=True)
+    
+    #run play button with hover
+    runColor = rgb(0,120,0) if app.runButtonHovered else 'darkGreen'
+    drawRect(50, 280, 200, 100, fill=runColor, border='white', borderWidth=2)
+    drawLabel("RUN PLAY", 150, 330, fill='white', size=24, bold=True)
+
+def drawGameOver(app):
+    #full screen overlay
     drawRect(0, 0, app.width, app.height, fill='black', opacity=60)
     
-    #title screen
-    drawRect(660, 160, 600, 80, fill='darkGreen', border='white', borderWidth=3)
-    drawLabel('ANTIQUE BOWL', 960, 200, size=50, bold=True, fill='white')
-    drawRect(610, 350, 700, 300, fill=rgb(0, 50, 0), border='white', borderWidth=2)
-    drawLabel("GAME CONTROLS", 960, 380, size=30, bold=True, fill='gold')
-    drawLine(660, 410, 1260, 410, fill='white', lineWidth=2)
-    drawLabel("1. Select your play type: Pass Play or Run Play", 960, 440, 
-             size=22, bold=True, fill='white')
-    #title screen controls
-    drawLabel("2. Pass Play Controls:", 960, 480, 
-             size=22, bold=True, fill='white')
-    drawLabel("• Ball snaps to quarterback", 960, 500, 
-             size=22, fill='white')
-    drawLabel("• Click on quarterback to start throwing", 960, 520, 
-             size=22, fill='white')
-    drawLabel("• Drag to aim and release to throw", 960, 540, 
-             size=22, fill='white')
+    #game over panel
+    drawRect(app.width/2 - 250, app.height/2 - 150, 500, 300, 
+            fill=rgb(0, 40, 0), border='gold', borderWidth=4)
     
-    drawLabel("3. Run Play Controls:", 960, 580, 
-             size=22, bold=True, fill='white')
-    drawLabel("• Ball snaps to running back", 960, 600, 
-             size=22, fill='white')
-    drawLabel("• Use arrow keys to move in any direction", 960, 620, 
-             size=22, fill='white')
+    drawLabel('GAME OVER', app.width/2, app.height/2 - 80, 
+             size=50, bold=True, fill='gold')
+    drawLabel(f'Final Score: {app.gameState.score["Team A"]}', 
+             app.width/2, app.height/2, size=35, fill='white', bold=True)
     
-    #start button
-    drawRect(860, 770, 200, 60, fill='darkGreen', border='white', borderWidth=3)
-    drawLabel('START GAME', 960, 800, size=30, bold=True, fill='white')
+    #reset button with hover effect
+    buttonColor = rgb(0,100,0) if app.resetButtonHovered else 'darkGreen'
+    drawRect(app.width/2 - 100, app.height/2 + 60, 200, 60, 
+            fill=buttonColor, border='white', borderWidth=3)
+    drawLabel('PLAY AGAIN', app.width/2, app.height/2 + 90, 
+             size=30, bold=True, fill='white')
 
+def drawTouchdown(app):
+    #celebration overlay
+    drawRect(0, 0, app.width, app.height, fill='black', opacity=50)
+    
+    #touchdown banner
+    bannerWidth, bannerHeight = 600, 300
+    centerX, centerY = app.width/2, app.height/2
+    
+    #banner background with glow effect
+    drawRect(centerX - bannerWidth/2 - 10, centerY - bannerHeight/2 - 10,
+            bannerWidth + 20, bannerHeight + 20, fill='gold', opacity=30)
+    drawRect(centerX - bannerWidth/2, centerY - bannerHeight/2,
+            bannerWidth, bannerHeight, fill='darkGreen', opacity=90)
+    drawRect(centerX - bannerWidth/2 + 10, centerY - bannerHeight/2 + 10,
+            bannerWidth - 20, bannerHeight - 20, fill=None, border='gold', borderWidth=4)
+    
+    #touchdown text with shadow
+    drawLabel('TOUCHDOWN!', centerX + 3, centerY - 47, size=60, bold=True, fill='black')
+    drawLabel('TOUCHDOWN!', centerX, centerY - 50, size=60, bold=True, fill='gold')
+    
+    #score update
+    drawLabel(f'Score: {app.gameState.score["Team A"]}', centerX, centerY + 20, 
+             size=40, fill='white', bold=True)
+    
+    #continue prompt
+    drawLabel('Click anywhere to continue', centerX, centerY + 80, 
+             size=25, fill='white')
+
+def onMouseMove(app, mouseX, mouseY):
+    #start button hover detection
+    app.startButtonHovered = (860 <= mouseX <= 1060 and 
+                            730 <= mouseY <= 790)
+    
+    #play selection button hover
+    if app.state == 'playSelection':
+        app.passButtonHovered = (50 <= mouseX <= 250 and 
+                               160 <= mouseY <= 260)
+        app.runButtonHovered = (50 <= mouseX <= 250 and 
+                              280 <= mouseY <= 380)
 def redrawAll(app):
     if app.state == 'startScreen':
         drawStartScreen(app)
@@ -119,10 +227,11 @@ def redrawAll(app):
         app.field.updateCamera(app.ball.positionX, app.ball.positionY)
         app.field.drawField()
 
-        # Draw first down line
+        #draw first down line
         first_down_x = (app.gameState.first_down_line - app.field.camera_x) * app.field.scale_factor
         drawLine(first_down_x, 0, first_down_x, app.height, fill='yellow', lineWidth=2)
 
+        #draw players and animations
         for player in app.players:
             #receiver animation
             if player in app.receivers and app.receiversMoving:
@@ -142,61 +251,42 @@ def redrawAll(app):
             
             player.draw(app.field.camera_x, app.field.camera_y, app.field.scale_factor)
 
+        #draw trajectory dots for passing
         for dot in app.trajectoryDots:
             dotX = (dot[0] - app.field.camera_x) * app.field.scale_factor
             dotY = (dot[1] - app.field.camera_y) * app.field.scale_factor
             drawCircle(dotX, dotY, 4, fill='yellow', border='black', borderWidth=1)
 
+        #draw ball
         ball_image = 'other_sprites/ball.png'
         ball_screen_x = (app.ball.positionX - app.field.camera_x) * app.field.scale_factor
         ball_screen_y = (app.ball.positionY - app.field.camera_y) * app.field.scale_factor
         drawImage(ball_image, ball_screen_x, ball_screen_y, width=60, height=35)
 
-        if app.state == 'playSelection':
-            #play selection
-            drawRect(50, 50, 200, 100, fill='darkBlue', border='white', borderWidth=2)
-            drawRect(50, 200, 200, 100, fill='darkGreen', border='white', borderWidth=2)
-            drawLabel("Pass Play", 150, 100, fill='white', size=24, bold=True)
-            drawLabel("Run Play", 150, 250, fill='white', size=24, bold=True)
-
-        #down count, score, and timer
-        drawRect(30, 10, 250, 40, fill='black', opacity=50)
-        drawLabel(app.gameState.get_down_text(), 150, 30, size=20, fill='white', bold=True)
-        
-        drawRect(330, 10, 150, 40, fill='black', opacity=50)
-        drawRect(530, 10, 150, 40, fill='black', opacity=50)
-        drawLabel(f"Score: {app.gameState.score['Team A']}", 400, 30, size=20, fill='white', bold=True)
-        drawLabel(f"Time: {int(app.timer)}s", 600, 30, size=20, fill='white', bold=True)
-            
+        #draw defenders
         for defender in app.defense.players:
             defender.draw(app.field.camera_x, app.field.camera_y, app.field.scale_factor)
 
-        # Draw game over screen if game is over
-        if app.gameState.game_over:
-            drawRect(app.width/2 - 200, app.height/2 - 100, 400, 200, 
-                    fill='black', opacity=80)
-            drawLabel('GAME OVER', app.width/2, app.height/2 - 50, 
-                     size=40, bold=True, fill='white')
-            drawLabel('Press R to Reset', app.width/2, app.height/2 + 50, 
-                     size=30, fill='white')
-    if app.state == 'touchdown':
-            drawRect(app.width/2 - 200, app.height/2 - 100, 400, 200, 
-                    fill='darkGreen', opacity=80)
-            drawLabel('TOUCHDOWN!', app.width/2, app.height/2 - 50, 
-                     size=40, bold=True, fill='gold')
-            drawLabel(f'Score: {app.gameState.score["Team A"]}', app.width/2, app.height/2 + 50, 
-                     size=30, fill='white')
+        #draw UI elements
+        drawGameHUD(app)
+
+        #rraw state-specific UI
+        if app.state == 'playSelection':
+            drawPlaySelection(app)
+        elif app.state == 'gameOver':
+            drawGameOver(app)
+        elif app.state == 'touchdown':
+            drawTouchdown(app)
 
 def onKeyPress(app, key):
     if key == 'r' and app.gameState.game_over:
-        # Reset the game
+        #reset the game
         app.gameState.reset_game(650)
         resetPlay(app)
         app.state = 'playSelection'
 
 def onMousePress(app, mouseX, mouseY):
     if app.state == 'startScreen':
-        #check if game start was clicked
         buttonY = app.height * 0.8
         if (app.width/2 - 100 <= mouseX <= app.width/2 + 100 and
             buttonY - 30 <= mouseY <= buttonY + 30):
@@ -204,18 +294,18 @@ def onMousePress(app, mouseX, mouseY):
             return
         
     elif app.state == 'playSelection':
-        if 50 <= mouseX <= 250 and 50 <= mouseY <= 150:
-            app.currentPlay = 'pass'
-            app.state = 'hiking'
-            app.qbSelected = False
-            app.ballSnapped = False
-            app.receiversMoving = True
-
-        elif 50 <= mouseX <= 250 and 200 <= mouseY <= 300:
-            app.currentPlay = 'run'
-            app.state = 'hiking'
-            app.ballSnapped = False
-            app.receiversMoving = False
+        if 50 <= mouseX <= 250:
+            if 160 <= mouseY <= 260:  #pass play
+                app.currentPlay = 'pass'
+                app.state = 'hiking'
+                app.qbSelected = False
+                app.ballSnapped = False
+                app.receiversMoving = True
+            elif 280 <= mouseY <= 380:  #run play
+                app.currentPlay = 'run'
+                app.state = 'hiking'
+                app.ballSnapped = False
+                app.receiversMoving = False
 
     elif app.state == 'postSnap' and app.currentPlay == 'pass':
         fieldMouseX, fieldMouseY = screenToField(app, mouseX, mouseY)
@@ -228,12 +318,12 @@ def onMousePress(app, mouseX, mouseY):
             app.ball.beingDragged = True
     if app.state == 'touchdown':
         app.state = 'playSelection'
-        # Reset formations when leaving touchdown screen
+        #reset formations when leaving touchdown screen
         starting_position = 650
-        quarterbackSprite = 'stance.png'
+        quarterbackSprite = 'other_sprites/stance.png'
         linemanSprite = 'linemen-animation/linestance.png'
         receiverSprite = 'run-animation/run1_cleaned.png'
-        runningBackSprite = 'stance.png'
+        runningBackSprite = 'other_sprites/stance.png'
         defenderSprite = 'defender.png'
         
         app.players = setupFormation(
@@ -287,11 +377,11 @@ def onStep(app):
                 app.snapTimer = 0
 
     if app.state in ['postSnap', 'runPlay', 'receiverControl']:
-        # Check for touchdown
+        #check for touchdown
         if app.ball.positionX >= app.field.field_width * 0.9:
             app.state = 'touchdown'
             app.gameState.score['Team A'] += 7
-            app.gameState.reset_touchdown(app.field.field_width * 0.25)
+            app.gameState.reset_touchdown(650)
             resetPlayAfterTouchdown(app)
             return
 
@@ -303,15 +393,25 @@ def onStep(app):
                 player.moveForward()
         
         if any(player.tackleAnimationComplete for player in app.players):
-            result = app.gameState.update_down(app.ball.positionX)
-            if result == 'game_over':
-                app.state = 'gameOver'
+            #here's the key change: Check for first down before updating downs
+            if app.ball.positionX >= app.gameState.first_down_line:
+                #reset down and update first down line
+                app.gameState.down = 1
+                app.gameState.initial_ball_position = app.ball.positionX
+                app.gameState.first_down_line = app.ball.positionX + 200
+                app.gameState.yards_to_go = 10
+                resetPlay(app)
             else:
-                result = app.gameState.next_down(app.ball.positionX)
+                #if not a first down, then update down count
+                result = app.gameState.update_down(app.ball.positionX)
                 if result == 'game_over':
                     app.state = 'gameOver'
                 else:
-                    resetPlay(app)
+                    result = app.gameState.next_down(app.ball.positionX)
+                    if result == 'game_over':
+                        app.state = 'gameOver'
+                    else:
+                        resetPlay(app)
 
         if app.state == 'postSnap' and app.currentPlay == 'pass':
             if app.ball.inFlight:
@@ -415,10 +515,10 @@ def resetPlay(app):
     #reset ball position
     app.ball.reset(last_ball_x, app.field.field_height / 2)
     
-    quarterbackSprite = 'stance.png'
+    quarterbackSprite = 'other_sprites/stance.png'
     linemanSprite = 'linemen-animation/linestance.png'
     receiverSprite = 'run-animation/run1_cleaned.png'
-    runningBackSprite = 'stance.png'
+    runningBackSprite = 'other_sprites/stance.png'
     defenderSprite = 'defender.png'
     
     #new formation
@@ -451,10 +551,10 @@ def resetPlayAfterTouchdown(app):
     app.gameState.reset_touchdown(starting_position)
     
     #reset all formations
-    quarterbackSprite = 'stance.png'
+    quarterbackSprite = 'other_sprites/stance.png'
     linemanSprite = 'linemen-animation/linestance.png'
     receiverSprite = 'run-animation/run1_cleaned.png'
-    runningBackSprite = 'stance.png'
+    runningBackSprite = 'other_sprites/stance.png'
     defenderSprite = 'defender.png'
     
     #create new formation at starting position
