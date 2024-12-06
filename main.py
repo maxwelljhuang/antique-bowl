@@ -78,7 +78,7 @@ def onAppStart(app):
     app.runningBack.frameDelay = 3
     app.runningBack.speed = 5
 
-    defenderSprite = 'defender.png'  
+    defenderSprite = 'other_sprites/defender.png'  
     app.defense = Defense(app.ball.positionX, app.ball.positionY, defenderSprite)
 
 def drawStartScreen(app):
@@ -209,17 +209,6 @@ def drawTouchdown(app):
     drawLabel('Click anywhere to continue', centerX, centerY + 80, 
              size=25, fill='white')
 
-def onMouseMove(app, mouseX, mouseY):
-    #start button hover detection
-    app.startButtonHovered = (860 <= mouseX <= 1060 and 
-                            730 <= mouseY <= 790)
-    
-    #play selection button hover
-    if app.state == 'playSelection':
-        app.passButtonHovered = (50 <= mouseX <= 250 and 
-                               160 <= mouseY <= 260)
-        app.runButtonHovered = (50 <= mouseX <= 250 and 
-                              280 <= mouseY <= 380)
 def redrawAll(app):
     if app.state == 'startScreen':
         drawStartScreen(app)
@@ -288,24 +277,38 @@ def onKeyPress(app, key):
 def onMousePress(app, mouseX, mouseY):
     if app.state == 'startScreen':
         buttonY = app.height * 0.8
-        if (app.width/2 - 100 <= mouseX <= app.width/2 + 100 and
-            buttonY - 30 <= mouseY <= buttonY + 30):
+        if (app.width/2 - 200 <= mouseX <= app.width/2 + 200 and
+            buttonY - 200 <= mouseY <= buttonY + 200):
             app.state = 'playSelection'
             return
         
     elif app.state == 'playSelection':
         if 50 <= mouseX <= 250:
-            if 160 <= mouseY <= 260:  #pass play
+            if 160 <= mouseY <= 260:  # pass play
                 app.currentPlay = 'pass'
                 app.state = 'hiking'
                 app.qbSelected = False
                 app.ballSnapped = False
                 app.receiversMoving = True
-            elif 280 <= mouseY <= 380:  #run play
+            elif 280 <= mouseY <= 380:  # run play
                 app.currentPlay = 'run'
                 app.state = 'hiking'
                 app.ballSnapped = False
                 app.receiversMoving = False
+                
+    elif app.state == 'gameOver':
+        # Check if play again button is clicked
+        buttonX = app.width/2
+        buttonY = app.height/2 + 90
+        if (buttonX - 100 <= mouseX <= buttonX + 100 and
+            buttonY - 30 <= mouseY <= buttonY + 30):
+            # Reset the game
+            app.gameState.reset_game(650)
+            app.timer = 60  # Reset timer
+            app.score = {'Team A': 0, 'Team B': 0}  # Reset score
+            resetPlay(app)
+            app.state = 'playSelection'
+            return
 
     elif app.state == 'postSnap' and app.currentPlay == 'pass':
         fieldMouseX, fieldMouseY = screenToField(app, mouseX, mouseY)
@@ -316,39 +319,31 @@ def onMousePress(app, mouseX, mouseY):
             qbY - qbHeight/2 <= fieldMouseY <= qbY + qbHeight/2):
             app.qbSelected = True
             app.ball.beingDragged = True
-    if app.state == 'touchdown':
-        app.state = 'playSelection'
-        #reset formations when leaving touchdown screen
-        starting_position = 650
-        quarterbackSprite = 'other_sprites/stance.png'
-        linemanSprite = 'linemen-animation/linestance.png'
-        receiverSprite = 'run-animation/run1_cleaned.png'
-        runningBackSprite = 'other_sprites/stance.png'
-        defenderSprite = 'defender.png'
-        
-        app.players = setupFormation(
-            starting_position, app.ball.positionY,
-            quarterbackSprite, linemanSprite, receiverSprite, runningBackSprite
-        )
-        app.quarterback = app.players[7]
-        app.runningBack = app.players[8]
-        app.receivers = app.players[9:]
-        app.defense = Defense(starting_position, app.ball.positionY, defenderSprite)
+
+    elif app.state == 'touchdown':
+        # Any click in touchdown state will continue the game
+        resetPlayAfterTouchdown(app)  # Reset the formations and ball position
+        app.state = 'playSelection'  # Move to play selection
         return
-        
-def onMouseDrag(app, mouseX, mouseY):
-    if app.state == 'postSnap' and app.currentPlay == 'pass' and app.qbSelected:
-        fieldMouseX, fieldMouseY = screenToField(app, mouseX, mouseY)
-        if app.ball.beingDragged:
-            app.ball.positionX = fieldMouseX
-            app.ball.positionY = fieldMouseY
-            app.trajectoryDots = calculateTrajectory(
-                app.quarterback.x, 
-                app.quarterback.y,
-                fieldMouseX,
-                fieldMouseY,
-                power=15
-            )
+
+def onMouseMove(app, mouseX, mouseY):
+    # Start button hover detection
+    app.startButtonHovered = (860 <= mouseX <= 1060 and 
+                            730 <= mouseY <= 790)
+    
+    # Play selection button hover
+    if app.state == 'playSelection':
+        app.passButtonHovered = (50 <= mouseX <= 250 and 
+                               160 <= mouseY <= 260)
+        app.runButtonHovered = (50 <= mouseX <= 250 and 
+                              280 <= mouseY <= 380)
+    
+    # Reset button hover in game over screen
+    elif app.state == 'gameOver':
+        buttonX = app.width/2
+        buttonY = app.height/2 + 90
+        app.resetButtonHovered = (buttonX - 100 <= mouseX <= buttonX + 100 and
+                                buttonY - 30 <= mouseY <= buttonY + 30)
 
 def onMouseRelease(app, mouseX, mouseY):
     if app.state == 'postSnap' and app.currentPlay == 'pass' and app.qbSelected:
@@ -358,6 +353,25 @@ def onMouseRelease(app, mouseX, mouseY):
             app.qbSelected = False
             app.trajectoryDots = []
 
+def onMouseMove(app, mouseX, mouseY):
+    # Start button hover detection
+    app.startButtonHovered = (860 <= mouseX <= 1060 and 
+                            730 <= mouseY <= 790)
+    
+    # Play selection button hover
+    if app.state == 'playSelection':
+        app.passButtonHovered = (50 <= mouseX <= 250 and 
+                               160 <= mouseY <= 260)
+        app.runButtonHovered = (50 <= mouseX <= 250 and 
+                              280 <= mouseY <= 380)
+    
+    # Reset button hover in game over screen
+    elif app.state == 'gameOver':
+        buttonX = app.width/2
+        buttonY = app.height/2 + 90
+        app.resetButtonHovered = (buttonX - 100 <= mouseX <= buttonX + 100 and
+                                buttonY - 30 <= mouseY <= buttonY + 30)
+    
 def onStep(app):
     if app.state == 'hiking':
         if not app.ballSnapped:
@@ -378,7 +392,7 @@ def onStep(app):
 
     if app.state in ['postSnap', 'runPlay', 'receiverControl']:
         #check for touchdown
-        if app.ball.positionX >= app.field.field_width * 0.9:
+        if app.ball.positionX >= app.field.field_width * 0.85:
             app.state = 'touchdown'
             app.gameState.score['Team A'] += 7
             app.gameState.reset_touchdown(650)
@@ -519,7 +533,7 @@ def resetPlay(app):
     linemanSprite = 'linemen-animation/linestance.png'
     receiverSprite = 'run-animation/run1_cleaned.png'
     runningBackSprite = 'other_sprites/stance.png'
-    defenderSprite = 'defender.png'
+    defenderSprite = 'defender-animation/defense1.png'
     
     #new formation
     app.players = setupFormation(
