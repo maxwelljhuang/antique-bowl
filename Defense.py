@@ -3,7 +3,7 @@ import math
 import random
 
 ''' 
-Refernces: 
+References: 
 Rule Based AI - https://realpython.com/tic-tac-toe-ai-python/ , https://stackoverflow.com/questions/53421492/python-rule-based-engine 
 '''
 

@@ -12,6 +12,9 @@ from GameState import *
 Image Citations:
 Field: https://ia802208.us.archive.org/26/items/retro-bowl/RetroBowl_texture_0.png
 Player Sprites (including animation frames and stationary frames): https://www.spriters-resource.com/mobile/retrobowl/sheet/200221/
+
+References:
+ChatGPT was utilized to aid in screen to field scale conversion on lines 618-625
 '''
 
 def onAppStart(app):
