@@ -14,7 +14,7 @@ class Defense:
         self.pursuit_speed = 3
         self.chase_mode = "contain"
         
-        # Define both defensive and offensive animation frames
+        #define both defensive and offensive animation frames
         self.running_frames = [
             f'run-animation/run{i}_cleaned.png' for i in range(1, 7)
         ]
@@ -27,34 +27,34 @@ class Defense:
         linemenYStart = ballY - 90 
         defenders = []
         
-        # Create defensive linemen (3 players)
+        #create defensive linemen
         for i in range(3):  
             yOffset = i * linemenSpacing + 30
             defender = Player(linemenX + 35, ballY + yOffset - 90, spritePath=defenderSprite)
             defender.type = "lineman"
             defender.speed = 2.5
             defender.pursuit_range = 50
-            defender.facingRight = False  # Initially face left (towards ball)
+            defender.facingRight = False  
             defenders.append(defender)
             
-        # Create linebackers (2 players)
+        #create linebackers 
         for i in range(2):
             yOffset = i * linemenSpacing * 2 + 15
             defender = Player(linemenX + 85, ballY + yOffset - 90, spritePath=defenderSprite)
             defender.type = "linebacker"
             defender.speed = 3.5
             defender.pursuit_range = 100
-            defender.facingRight = False  # Initially face left (towards ball)
+            defender.facingRight = False  
             defenders.append(defender)
             
-        # Create safeties (2 players)
+        #create safeties
         for i in range(2):
             yOffset = i * linemenSpacing * 3
             defender = Player(linemenX + 135, ballY + yOffset - 90, spritePath=defenderSprite)
             defender.type = "safety"
             defender.speed = 4.0
             defender.pursuit_range = 150
-            defender.facingRight = False  # Initially face left (towards ball)
+            defender.facingRight = False 
             defenders.append(defender)
         
         return defenders
@@ -66,7 +66,7 @@ class Defense:
             defender.frameDelay = 3
             defender.isRunning = False
             defender.facingRight = False
-            defender.spritePath = self.defender_sprite  # Start with defender sprite
+            defender.spritePath = self.defender_sprite  
 
     def update(self, ball, offensive_players):
         ball_carrier = ball.holder
@@ -88,7 +88,7 @@ class Defense:
             else:
                 self.return_to_position(defender, ball)
             
-            # Update animation based on movement direction
+            #update animation based on movement direction
             is_moving = abs(prev_x - defender.x) > 0.1 or abs(prev_y - defender.y) > 0.1
             moving_right = defender.x > prev_x
             
@@ -97,20 +97,19 @@ class Defense:
                 defender.facingRight = moving_right
                 defender.animationCounter += 1
                 
-                # Only use running animation when moving right
+                #only use running animation when moving right
                 if moving_right:
                     if defender.animationCounter >= defender.frameDelay:
                         defender.animationFrame = (defender.animationFrame + 1) % 6
                         defender.spritePath = self.running_frames[defender.animationFrame]
                         defender.animationCounter = 0
                 else:
-                    # Use default defender sprite when moving left
+                    #use default defender sprite when moving left
                     defender.spritePath = self.defender_sprite
             else:
                 defender.isRunning = False
-                defender.spritePath = self.defender_sprite  # Use defender sprite when stationary
+                defender.spritePath = self.defender_sprite   
 
-    # Rest of the methods remain unchanged...
     def pursue_aggressively(self, defender, target):
         dx = target.x - defender.x
         dy = target.y - defender.y

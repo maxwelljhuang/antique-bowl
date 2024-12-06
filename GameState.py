@@ -9,9 +9,9 @@ class GameState:
         self.game_over = False
         
     def update_down(self, current_ball_position):
-        # If made it to first down
+        #if made it to first down
         if current_ball_position >= self.first_down_line:
-            # Reset down to 1 and set new first down line
+            #reset down to 1 and set new first down line
             self.down = 1
             self.first_down_line = current_ball_position + (200)
             self.yards_to_go = 10
@@ -26,7 +26,7 @@ class GameState:
             return 'continue'
             
     def next_down(self, current_ball_position):
-        # Only increment down if we haven't reached first down
+        # only increment down if we haven't reached first down
         if current_ball_position < self.first_down_line:
             self.down += 1
             if self.down > 4:

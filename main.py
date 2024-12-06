@@ -273,7 +273,7 @@ def onKeyPress(app, key):
         app.gameState.reset_game(650)
         resetPlay(app)
         app.state = 'playSelection'
-        
+
 def onMouseDrag(app, mouseX, mouseY):
     if app.state == 'postSnap' and app.currentPlay == 'pass' and app.qbSelected:
         fieldMouseX, fieldMouseY = screenToField(app, mouseX, mouseY)
@@ -335,13 +335,12 @@ def onMousePress(app, mouseX, mouseY):
             app.ball.beingDragged = True
 
     elif app.state == 'touchdown':
-        # Any click in touchdown state will continue the game
-        resetPlayAfterTouchdown(app)  # Reset the formations and ball position
-        app.state = 'playSelection'  # Move to play selection
+        resetPlayAfterTouchdown(app)  
+        app.state = 'playSelection'  
         return
 
 def onMouseMove(app, mouseX, mouseY):
-    # Start button hover detection
+    #start button hover detection
     app.startButtonHovered = (860 <= mouseX <= 1060 and 
                             730 <= mouseY <= 790)
     
@@ -352,7 +351,7 @@ def onMouseMove(app, mouseX, mouseY):
         app.runButtonHovered = (50 <= mouseX <= 250 and 
                               280 <= mouseY <= 380)
     
-    # Reset button hover in game over screen
+    #reset button hover in game over screen
     elif app.state == 'gameOver':
         buttonX = app.width/2
         buttonY = app.height/2 + 90
@@ -368,18 +367,15 @@ def onMouseRelease(app, mouseX, mouseY):
             app.trajectoryDots = []
 
 def onMouseMove(app, mouseX, mouseY):
-    # Start button hover detection
     app.startButtonHovered = (860 <= mouseX <= 1060 and 
                             730 <= mouseY <= 790)
     
-    # Play selection button hover
     if app.state == 'playSelection':
         app.passButtonHovered = (50 <= mouseX <= 250 and 
                                160 <= mouseY <= 260)
         app.runButtonHovered = (50 <= mouseX <= 250 and 
                               280 <= mouseY <= 380)
     
-    # Reset button hover in game over screen
     elif app.state == 'gameOver':
         buttonX = app.width/2
         buttonY = app.height/2 + 90
@@ -591,7 +587,7 @@ def resetPlayAfterTouchdown(app):
         quarterbackSprite, linemanSprite, receiverSprite, runningBackSprite
     )
     
-    # Update player references
+    #update player references
     app.quarterback = app.players[7]
     app.runningBack = app.players[8]
     app.receivers = app.players[9:]
@@ -614,7 +610,7 @@ def resetPlayAfterTouchdown(app):
 
 
 '''
-Utilized ChatGPT for screen to field scale conversion when changing window size
+Utilized ChatGPT for help on screen to field scale conversion when changing window size
 '''
 def screenToField(app, screenX, screenY):
     if not hasattr(app, 'field') or app.field.scale_factor == 0:
