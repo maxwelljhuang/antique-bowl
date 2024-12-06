@@ -8,6 +8,19 @@ Rule Based AI - https://realpython.com/tic-tac-toe-ai-python/ , https://stackove
 '''
 
 class Defense:
+    def __init__(self, ballX, ballY, defenderSprite):
+        self.players = self.setup_formation(ballX, ballY, defenderSprite)
+        self.tackle_distance = 30
+        self.pursuit_speed = 3
+        self.chase_mode = "contain"
+        
+        # Define both defensive and offensive animation frames
+        self.running_frames = [
+            f'run-animation/run{i}_cleaned.png' for i in range(1, 7)
+        ]
+        self.defender_sprite = 'defender-animation/defense1.png'
+        self.setup_animations()
+
     def setup_formation(self, ballX, ballY, defenderSprite):
         linemenSpacing = 30
         linemenX = ballX  
@@ -21,6 +34,7 @@ class Defense:
             defender.type = "lineman"
             defender.speed = 2.5
             defender.pursuit_range = 50
+            defender.facingRight = False  # Initially face left (towards ball)
             defenders.append(defender)
             
         # Create linebackers (2 players)
@@ -30,6 +44,7 @@ class Defense:
             defender.type = "linebacker"
             defender.speed = 3.5
             defender.pursuit_range = 100
+            defender.facingRight = False  # Initially face left (towards ball)
             defenders.append(defender)
             
         # Create safeties (2 players)
@@ -39,21 +54,10 @@ class Defense:
             defender.type = "safety"
             defender.speed = 4.0
             defender.pursuit_range = 150
+            defender.facingRight = False  # Initially face left (towards ball)
             defenders.append(defender)
         
         return defenders
-
-    def __init__(self, ballX, ballY, defenderSprite):
-        self.players = self.setup_formation(ballX, ballY, defenderSprite)
-        self.tackle_distance = 30
-        self.pursuit_speed = 3
-        self.chase_mode = "contain"
-        
-        # Updated to use offensive running animation frames
-        self.running_frames = [
-            f'run-animation/run{i}_cleaned.png' for i in range(1, 7)
-        ]
-        self.setup_animations()
         
     def setup_animations(self):
         for defender in self.players:
@@ -61,8 +65,8 @@ class Defense:
             defender.animationCounter = 0
             defender.frameDelay = 3
             defender.isRunning = False
-            defender.movingRight = False
-            defender.spritePath = self.running_frames[0]
+            defender.facingRight = False
+            defender.spritePath = self.defender_sprite  # Start with defender sprite
 
     def update(self, ball, offensive_players):
         ball_carrier = ball.holder
@@ -90,20 +94,23 @@ class Defense:
             
             if is_moving:
                 defender.isRunning = True
-                defender.movingRight = moving_right
-                defender.animationCounter += 1
-                if defender.animationCounter >= defender.frameDelay:
-                    defender.animationFrame = (defender.animationFrame + 1) % 6
-                    defender.spritePath = self.running_frames[defender.animationFrame]
-                    defender.animationCounter = 0
-                    
-                # Flip sprite if moving left
                 defender.facingRight = moving_right
+                defender.animationCounter += 1
+                
+                # Only use running animation when moving right
+                if moving_right:
+                    if defender.animationCounter >= defender.frameDelay:
+                        defender.animationFrame = (defender.animationFrame + 1) % 6
+                        defender.spritePath = self.running_frames[defender.animationFrame]
+                        defender.animationCounter = 0
+                else:
+                    # Use default defender sprite when moving left
+                    defender.spritePath = self.defender_sprite
             else:
                 defender.isRunning = False
-                defender.spritePath = self.running_frames[0]
-    
-    # Rest of the Defense class methods remain the same...
+                defender.spritePath = self.defender_sprite  # Use defender sprite when stationary
+
+    # Rest of the methods remain unchanged...
     def pursue_aggressively(self, defender, target):
         dx = target.x - defender.x
         dy = target.y - defender.y

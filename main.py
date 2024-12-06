@@ -273,6 +273,20 @@ def onKeyPress(app, key):
         app.gameState.reset_game(650)
         resetPlay(app)
         app.state = 'playSelection'
+        
+def onMouseDrag(app, mouseX, mouseY):
+    if app.state == 'postSnap' and app.currentPlay == 'pass' and app.qbSelected:
+        fieldMouseX, fieldMouseY = screenToField(app, mouseX, mouseY)
+        if app.ball.beingDragged:
+            app.ball.positionX = fieldMouseX
+            app.ball.positionY = fieldMouseY
+            app.trajectoryDots = calculateTrajectory(
+                app.quarterback.x,
+                app.quarterback.y,
+                fieldMouseX,
+                fieldMouseY,
+                power=15
+            )
 
 def onMousePress(app, mouseX, mouseY):
     if app.state == 'startScreen':
@@ -598,6 +612,10 @@ def resetPlayAfterTouchdown(app):
     #reset defense
     app.defense = Defense(starting_position, app.ball.positionY, defenderSprite)
 
+
+'''
+Utilized ChatGPT for screen to field scale conversion when changing window size
+'''
 def screenToField(app, screenX, screenY):
     if not hasattr(app, 'field') or app.field.scale_factor == 0:
         print("Field or scale factor is not initialized!")
