@@ -4,7 +4,8 @@ import random
 
 ''' 
 References: 
-Rule Based AI - https://realpython.com/tic-tac-toe-ai-python/ , https://stackoverflow.com/questions/53421492/python-rule-based-engine 
+Rule Based AI Structure - https://realpython.com/tic-tac-toe-ai-python/ , https://stackoverflow.com/questions/53421492/python-rule-based-engine 
+Mathematical Distancing Algorithims (Eucledian distance) - https://stackoverflow.com/questions/59182675/how-to-calculate-distance-without-numpy
 '''
 
 class Defense:
@@ -77,11 +78,11 @@ class Defense:
             
             if ball_carrier:
                 if defender.type == "lineman":
-                    self.pursue_aggressively(defender, ball_carrier)
+                    self.linemenDefense(defender, ball_carrier)
                 elif defender.type == "linebacker":
-                    self.contain_strategy(defender, ball_carrier)
+                    self.linebackerDefense(defender, ball_carrier)
                 else:  # safety
-                    self.deep_contain(defender, ball_carrier)
+                    self.safetyDefense(defender, ball_carrier)
                 
                 if self.can_tackle(defender, ball_carrier):
                     self.tackle(ball, ball_carrier)
@@ -110,7 +111,7 @@ class Defense:
                 defender.isRunning = False
                 defender.spritePath = self.defender_sprite   
 
-    def pursue_aggressively(self, defender, target):
+    def linemenDefense(self, defender, target):
         dx = target.x - defender.x
         dy = target.y - defender.y
         distance = math.sqrt(dx**2 + dy**2)
@@ -120,7 +121,7 @@ class Defense:
             defender.x += (dx/distance) * speed
             defender.y += (dy/distance) * speed
 
-    def contain_strategy(self, defender, target):
+    def linebackerDefense(self, defender, target):
         dx = target.x - defender.x
         dy = target.y - defender.y
         distance = math.sqrt(dx**2 + dy**2)
@@ -136,7 +137,7 @@ class Defense:
             defender.x += (dx/distance) * speed
             defender.y += (dy/distance) * speed
 
-    def deep_contain(self, defender, target):
+    def safetyDefense(self, defender, target):
         dx = target.x - defender.x + 100  
         dy = target.y - defender.y
         if abs(dy) < 50:  

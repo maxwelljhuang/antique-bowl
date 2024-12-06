@@ -24,8 +24,6 @@ class Field:
         self.camera_x = max(0, min(self.camera_x, self.field_width - self.view_width / self.scale_factor))
         self.camera_y = max(0, min(self.camera_y, self.field_height - self.view_height / self.scale_factor))
 
-
-
     def drawField(self):
         drawImage(
             self.field_image_path,
