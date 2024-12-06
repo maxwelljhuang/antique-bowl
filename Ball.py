@@ -31,6 +31,19 @@ class Ball:
                 self.velocityY = 0
                 self.velocityX *= 0.8
                 self.inFlight = False
+        if self.inFlight and not self.beingDragged:
+            #update ball position in flight
+            self.positionX += self.velocityX
+            self.positionY += self.velocityY
+            self.velocityY += 0.5
+
+            #check field boundaries
+            if self.positionY <= 20 or self.positionY >= 960:  
+                self.inFlight = False
+                self.velocityX = 0
+                self.velocityY = 0
+                
+                self.positionY = max(20, min(426, self.positionY))
 
     def canBeCaught(self, player):
         if not self.inFlight or self.beingDragged:

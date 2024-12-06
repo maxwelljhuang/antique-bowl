@@ -10,9 +10,9 @@ class GameState:
         self.game_over = False
         
     def update_down(self, current_ball_position):
-        # If made to first down
+        #if made to first down
         if current_ball_position >= self.first_down_line:
-            # Reset down
+            #reset down
             self.down = 1
             self.first_down_line = current_ball_position + (200)
             self.yards_to_go = 10
@@ -20,7 +20,7 @@ class GameState:
             return 'continue'
         else:
             pixels_to_go = self.first_down_line - current_ball_position
-            # Pixels to yards conversion
+            #pixels to yards conversion
             self.yards_to_go = int(pixels_to_go / 20)
             if self.down >= 4:
                 self.game_over = True

@@ -189,41 +189,10 @@ def redrawAll(app):
 
 def onKeyPress(app, key):
     if key == 'r' and app.gameState.game_over:
-        # Full game reset
-        app.state = 'startScreen'
-        app.timer = 60
-        app.score = {'Team A': 0, 'Team B': 0}
-        app.draggingBall = False
-        app.trajectoryDots = []
-        app.qbSelected = False
-        app.ballSnapped = False
-        app.snapTimer = 0
-        app.receiversMoving = False
-        
-        # Reset ball to starting position
-        starting_position = app.field.field_width * 0.25
-        app.ball.reset(starting_position, app.field.field_height / 2)
-        
-        # Reset game state
-        app.gameState = GameState(starting_position)
-        
-        # Reset formations
-        quarterbackSprite = 'stance.png'
-        linemanSprite = 'linemen-animation/linestance.png'
-        receiverSprite = 'run-animation/run1_cleaned.png'
-        runningBackSprite = 'stance.png'
-        defenderSprite = 'defender.png'
-        
-        app.players = setupFormation(
-            starting_position, app.ball.positionY,
-            quarterbackSprite, linemanSprite, receiverSprite, runningBackSprite
-        )
-        app.quarterback = app.players[7]
-        app.runningBack = app.players[8]
-        app.receivers = app.players[9:]
-        
-        # Reset defense
-        app.defense = Defense(starting_position, app.ball.positionY, defenderSprite)
+        # Reset the game
+        app.gameState.reset_game(650)
+        resetPlay(app)
+        app.state = 'playSelection'
 
 def onMousePress(app, mouseX, mouseY):
     if app.state == 'startScreen':
@@ -355,9 +324,9 @@ def onStep(app):
                         app.state = 'receiverControl'
                         break
             
-            # If ball hits ground (incomplete pass)
+            #if ball hits ground (incomplete pass)
             elif not app.ball.inFlight and not app.ball.holder and not app.ball.beingDragged:
-                # Reset ball to where play started
+                #reset ball to where play started
                 app.ball.positionX = app.ball.initial_throw_position
                 result = app.gameState.next_down(app.ball.initial_throw_position)
                 if result == 'game_over':
@@ -374,14 +343,33 @@ def onKeyHold(app, keys):
     if app.state in ['runPlay', 'receiverControl']:
         ballCarrier = app.ball.holder
         if ballCarrier:
+            new_x = ballCarrier.x
+            new_y = ballCarrier.y
+            
+            #calculate new position based on input
             if 'up' in keys:
-                ballCarrier.y -= ballCarrier.speed
+                new_y -= ballCarrier.speed
             if 'down' in keys:
-                ballCarrier.y += ballCarrier.speed
+                new_y += ballCarrier.speed
             if 'right' in keys:
-                ballCarrier.x += ballCarrier.speed
+                new_x += ballCarrier.speed
             if 'left' in keys:
-                ballCarrier.x -= ballCarrier.speed
+                new_x -= ballCarrier.speed
+            
+            #check boundaries before applying movement
+            #adding margins for player sprite size
+            margin = 30
+            field_top = margin
+            field_bottom = app.field.field_height - 80
+            
+            #only update position if within bounds
+            if field_top <= new_y <= field_bottom:
+                ballCarrier.y = new_y
+            app.ball.positionY = ballCarrier.y
+            
+            #always allow horizontal movement
+            ballCarrier.x = new_x
+            app.ball.positionX = ballCarrier.x
     
 def calculateTrajectory(startX, startY, targetX, targetY, power=10):
     trajectory = []
@@ -480,20 +468,20 @@ def resetPlayAfterTouchdown(app):
     app.runningBack = app.players[8]
     app.receivers = app.players[9:]
     
-    # Reset animation states for receivers
+    #reset animation states for receivers
     for receiver in app.receivers:
         receiver.animationFrame = 0
         receiver.animationCounter = 0
         receiver.frameDelay = 3
         receiver.speed = 5
     
-    # Reset animation states for running back
+    #reset animation states for running back
     app.runningBack.animationFrame = 0
     app.runningBack.animationCounter = 0
     app.runningBack.frameDelay = 3
     app.runningBack.speed = 5
     
-    # Reset defense
+    #reset defense
     app.defense = Defense(starting_position, app.ball.positionY, defenderSprite)
 
 def screenToField(app, screenX, screenY):
